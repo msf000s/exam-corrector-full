@@ -1,17 +1,18 @@
-import os
+from flask import Flask, request, jsonify, send_from_directory
 import cv2
 import numpy as np
-from flask import Flask, render_template, request, jsonify
+import os
 import imutils
+import traceback
 
-app = Flask(__name__)
-UPLOAD_FOLDER = 'static'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app = Flask(__name__, static_folder='static')
 
-# ⚙️ عدّل هذا حسب اختبارك
-ANSWER_KEY = {0: 1, 1: 4, 2: 0, 3: 3, 4: 1}  # 5 أسئلة: B, E, A, D, B
+# تأكد من وجود مجلد static
+os.makedirs('static', exist_ok=True)
 
-# --- دوال معالجة الصور ---
+# ⚙️ عدّل حسب اختبارك
+ANSWER_KEY = ['B', 'C', 'A', 'D', 'B', 'A', 'C', 'D', 'A', 'B']
+
 def order_points(pts):
     rect = np.zeros((4, 2), dtype="float32")
     s = pts.sum(axis=1)
@@ -39,93 +40,112 @@ def four_point_transform(image, pts):
     M = cv2.getPerspectiveTransform(rect, dst)
     return cv2.warpPerspective(image, M, (maxWidth, maxHeight))
 
+def extract_answers(warped_gray):
+    bubbles_coords = [
+        # الجانب الأيمن (1-5)
+        (920, 250, 40, 40), (870, 250, 40, 40), (820, 250, 40, 40), (770, 250, 40, 40),
+        (920, 350, 40, 40), (870, 350, 40, 40), (820, 350, 40, 40), (770, 350, 40, 40),
+        (920, 450, 40, 40), (870, 450, 40, 40), (820, 450, 40, 40), (770, 450, 40, 40),
+        (920, 550, 40, 40), (870, 550, 40, 40), (820, 550, 40, 40), (770, 550, 40, 40),
+        (920, 650, 40, 40), (870, 650, 40, 40), (820, 650, 40, 40), (770, 650, 40, 40),
+        # الجانب الأيسر (6-10)
+        (360, 250, 40, 40), (310, 250, 40, 40), (260, 250, 40, 40), (210, 250, 40, 40),
+        (360, 350, 40, 40), (310, 350, 40, 40), (260, 350, 40, 40), (210, 350, 40, 40),
+        (360, 450, 40, 40), (310, 450, 40, 40), (260, 450, 40, 40), (210, 450, 40, 40),
+        (360, 550, 40, 40), (310, 550, 40, 40), (260, 550, 40, 40), (210, 550, 40, 40),
+        (360, 650, 40, 40), (310, 650, 40, 40), (260, 650, 40, 40), (210, 650, 40, 40),
+    ]
+    options = ['A', 'B', 'C', 'D']
+    answers = []
+    for i in range(10):
+        best_choice = -1
+        max_filled = 0
+        for c in range(4):
+            idx = i * 4 + c
+            x, y, w, h = bubbles_coords[idx]
+            # تأكد من أن الإحداثيات داخل الصورة
+            if y + h > warped_gray.shape[0] or x + w > warped_gray.shape[1]:
+                answers.append("فراغ")
+                continue
+            roi = warped_gray[y:y+h, x:x+w]
+            total = cv2.countNonZero(roi)
+            if total > max_filled:
+                max_filled = total
+                best_choice = c
+        if max_filled < 50:
+            answers.append("فراغ")
+        else:
+            answers.append(options[best_choice])
+    return answers
+
 @app.route('/')
-def index():
-    return render_template('index.html')
+def home():
+    return send_from_directory('static', 'index.html')
+
+@app.route('/<path:path>')
+def static_files(path):
+    return send_from_directory('static', path)
 
 @app.route('/correct', methods=['POST'])
 def correct():
-    if 'image' not in request.files:
-        return jsonify({"error": "لم يتم تحميل صورة"}), 400
+    try:
+        if 'image' not in request.files:
+            return jsonify({"error": "لم يتم إرسال صورة"}), 400
 
-    file = request.files['image']
-    input_path = os.path.join(UPLOAD_FOLDER, 'input.jpg')
-    file.save(input_path)
+        file = request.files['image']
+        if file.filename == '':
+            return jsonify({"error": "اسم الملف فارغ"}), 400
 
-    image = cv2.imread(input_path)
-    orig = image.copy()
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-    edged = cv2.Canny(blurred, 50, 150)
+        # قراءة الصورة
+        nparr = np.frombuffer(file.read(), np.uint8)
+        if nparr.size == 0:
+            return jsonify({"error": "الصورة فارغة"}), 400
 
-    cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-    docCnt = None
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img is None:
+            return jsonify({"error": "فشل في فك تشفير الصورة"}), 400
 
-    if len(cnts) > 0:
-        cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
-        for c in cnts:
-            peri = cv2.arcLength(c, True)
-            approx = cv2.approxPolyDP(c, 0.02 * peri, True)
-            if len(approx) == 4:
-                docCnt = approx
-                break
+        # معالجة الصورة
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        edged = cv2.Canny(blurred, 50, 150)
 
-    if docCnt is not None:
-        paper = four_point_transform(orig, docCnt.reshape(4, 2))
-        warped = four_point_transform(gray, docCnt.reshape(4, 2))
-    else:
-        paper = orig
-        warped = gray
+        cnts = cv2.findContours(edged.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        docCnt = None
+        if len(cnts) > 0:
+            cnts = sorted(cnts, key=cv2.contourArea, reverse=True)
+            for c in cnts:
+                peri = cv2.arcLength(c, True)
+                approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+                if len(approx) == 4:
+                    docCnt = approx
+                    break
 
-    thresh = cv2.threshold(warped, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cnts = imutils.grab_contours(cnts)
-    questionCnts = []
-
-    for c in cnts:
-        (x, y, w, h) = cv2.boundingRect(c)
-        ar = w / float(h)
-        if w >= 20 and h >= 20 and 0.9 <= ar <= 1.1:
-            questionCnts.append(c)
-
-    if len(questionCnts) < len(ANSWER_KEY) * 5:
-        return jsonify({"error": "لم يتم اكتشاف عدد كافٍ من الفقاعات"}), 400
-
-    questionCnts = sorted(questionCnts, key=lambda ctr: (cv2.boundingRect(ctr)[1] // 30, cv2.boundingRect(ctr)[0]))
-    correct = 0
-
-    for (q, i) in enumerate(range(0, len(questionCnts), 5)):
-        if q >= len(ANSWER_KEY):
-            break
-        cnts = sorted(questionCnts[i:i+5], key=lambda ctr: cv2.boundingRect(ctr)[0])
-        bubbled = None
-        max_val = 0
-        for (j, c) in enumerate(cnts):
-            mask = np.zeros(thresh.shape, dtype="uint8")
-            cv2.drawContours(mask, [c], -1, 255, -1)
-            mask = cv2.bitwise_and(thresh, thresh, mask=mask)
-            total = cv2.countNonZero(mask)
-            if total > max_val:
-                max_val = total
-                bubbled = j
-        if bubbled == ANSWER_KEY[q]:
-            correct += 1
-            color = (0, 255, 0)
+        if docCnt is not None:
+            warped = four_point_transform(gray, docCnt.reshape(4, 2))
         else:
-            color = (0, 0, 255)
-        cv2.drawContours(paper, [cnts[bubbled]], -1, color, 3)
+            warped = gray
 
-    score = (correct / len(ANSWER_KEY)) * 100
-    output_path = os.path.join(UPLOAD_FOLDER, 'result.jpg')
-    cv2.imwrite(output_path, paper)
+        thresh = cv2.threshold(warped, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
+        student_answers = extract_answers(thresh)
 
-    return jsonify({
-        "score": round(score, 2),
-        "correct": correct,
-        "total": len(ANSWER_KEY),
-        "result_image": "/static/result.jpg"
-    })
+        correct_count = sum(1 for s, c in zip(student_answers, ANSWER_KEY) if s == c)
+        wrong_count = len(ANSWER_KEY) - correct_count
+        percentage = round((correct_count / len(ANSWER_KEY)) * 100)
+
+        return jsonify({
+            "answers": student_answers,
+            "correct_count": correct_count,
+            "wrong_count": wrong_count,
+            "percentage": percentage
+        })
+
+    except Exception as e:
+        # سجّل الخطأ في السجل (مفيد في Render)
+        print("ERROR in /correct:", str(e))
+        traceback.print_exc()
+        return jsonify({"error": "خطأ داخلي في الخادم", "details": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
