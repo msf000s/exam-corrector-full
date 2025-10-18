@@ -409,10 +409,6 @@
                             class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
                         ✅ تأكيد الإجابات والمتابعة
                     </button>
-                    <button onclick="retryReading()" 
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
-                        🔄 إعادة قراءة الصورة
-                    </button>
                     <button onclick="manualEntry()" 
                             class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
                         ✏️ إدخال يدوي
@@ -1416,15 +1412,6 @@ function confirmAnswers() {
     showNotification('تم تأكيد الإجابات وحساب النتائج!', 'success');
 }
 
-function retryReading() {
-    showNotification('جاري إعادة قراءة الصورة بدقة أعلى...', 'info');
-    
-    setTimeout(() => {
-        studentAnswers = generateRandomAnswers();
-        showAnswerVerification();
-        showNotification('تم إعادة قراءة الصورة! يرجى مراجعة النتائج الجديدة.', 'success');
-    }, 1500);
-}
 
 function manualEntry() {
     const verificationGrid = document.getElementById('verificationGrid');
