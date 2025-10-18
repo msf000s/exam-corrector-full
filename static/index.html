@@ -1296,14 +1296,6 @@ function enhanceImageForOCR(imageData) {
                 addEmptyAnswersStats(emptyCount);
             }
             
-            document.getElementById('resultsSection').classList.remove('hidden');
-            
-            let message = 'تم تحليل الإجابات بنجاح!';
-            if (emptyCount > 0) {
-                message += ` تم العثور على ${emptyCount} إجابة فارغة.`;
-            }
-            showNotification(message, 'success');
-        }
 
         function addEmptyAnswersStats(emptyCount) {
             // البحث عن مكان إضافة إحصائية الإجابات الفارغة
@@ -2969,3 +2961,4 @@ ${correctAnswers.map((correct, i) =>
 
 	</body>
 </html>
+
