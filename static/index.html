@@ -2515,23 +2515,20 @@ function exportMultiReport() {
     showNotification('تم تصدير تقرير التصحيح المتعدد!', 'success');
 }
 
-        // ✅ الوظيفة الوحيدة للتحليل: اتصال حقيقي مع OpenCV
-        async function processImageWithAI(imageSrc) {
-            showNotification('جاري تحليل الصورة باستخدام OpenCV...', 'info');
-            const res = await fetch(imageSrc);
-            const blob = await res.blob();
-            const formData = new FormData();
-            formData.append('image', blob, 'answer_sheet.jpg');
-            const response = await fetch('/correct', {
-                method: 'POST',
-                body: formData
-            });
-            const data = await response.json();
-            if (data.error) {
-                throw new Error(data.error);
-            }
-            return data.answers; // ["A", "B", "فراغ", ...]
-        }
+async function processImageWithAI(imageSrc) {
+    showNotification('جاري تحليل الصورة باستخدام OpenCV...', 'info');
+    const res = await fetch(imageSrc);
+    const blob = await res.blob();
+    const formData = new FormData();
+    formData.append('image', blob, 'answer_sheet.jpg');
+    const response = await fetch('/correct', {
+        method: 'POST',
+        body: formData
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data.answers; // ["A", "B", "فراغ", ...]
+}
 
         // === معالجة النتائج ===
         function processAnswers() {
