@@ -54,7 +54,95 @@
             <!-- إدارة الطلاب -->
             <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">👥 إدارة الطلاب</h2>
-                <!-- ... (باقي أقسام الواجهة كما هي: استيراد، قائمة، إلخ) ... -->
+                <!-- استيراد قائمة الطلاب -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-semibold text-blue-800 mb-3">📊 استيراد من ملف Excel</h3>
+                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
+                        <button onclick="downloadStudentsTemplate()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2">
+                            📥 تحميل نموذج Excel
+                        </button>
+                        <div class="flex-1">
+                            <input type="file" id="studentsFileInput" accept=".xlsx,.xls,.csv" 
+                                   class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                        </div>
+                    </div>
+                    <p class="text-sm text-blue-700">
+                        💡 الملف يجب أن يحتوي على عمودين: "اسم الطالب" و "الفصل" (سيتم إنشاء رقم الطالب تلقائياً)
+                        <br>📋 يدعم ملفات: .xlsx, .xls, .csv
+                    </p>
+                </div>
+
+                <!-- قائمة الطلاب -->
+                <div id="studentsListSection" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">📋 قائمة الطلاب</h3>
+                        <div class="flex gap-2">
+                            <button onclick="toggleMultipleCorrection()" id="multiCorrectionBtn"
+                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                                🔄 تصحيح متعدد
+                            </button>
+                            <button onclick="clearStudentsList()" 
+                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">
+                                🗑️ مسح القائمة
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- إحصائيات سريعة -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div class="bg-blue-100 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="totalStudentsCount">0</div>
+                            <div class="text-xs text-blue-800">إجمالي الطلاب</div>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600" id="correctedCount">0</div>
+                            <div class="text-xs text-green-800">تم تصحيحها</div>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-yellow-600" id="pendingCount">0</div>
+                            <div class="text-xs text-yellow-800">في الانتظار</div>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="uniqueClassesCount">0</div>
+                            <div class="text-xs text-purple-800">عدد الفصول</div>
+                        </div>
+                    </div>
+
+                    <!-- فلاتر البحث -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="searchStudentName" class="block text-sm font-medium text-gray-700 mb-1">البحث بالاسم:</label>
+                                <input type="text" id="searchStudentName" placeholder="اسم الطالب..." 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       onkeyup="filterStudentsList()">
+                            </div>
+                            <div>
+                                <label for="filterClass" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالفصل:</label>
+                                <select id="filterClass" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        onchange="filterStudentsList()">
+                                    <option value="">جميع الفصول</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-1">حالة التصحيح:</label>
+                                <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        onchange="filterStudentsList()">
+                                    <option value="">الكل</option>
+                                    <option value="corrected">تم التصحيح</option>
+                                    <option value="pending">في الانتظار</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- قائمة الطلاب -->
+                    <div id="studentsList" class="space-y-2 max-h-64 overflow-y-auto">
+                        <!-- سيتم ملؤها ديناميكياً -->
+                    </div>
+                </div>
+
                 
                 <!-- اختيار الطالب الحالي -->
                 <div id="currentStudentSection" class="hidden bg-green-50 rounded-lg p-4 mb-4">
@@ -275,8 +363,176 @@
                 </div>
             </div>
 
-            <!-- باقي الأقسام (سجل النتائج، الإعدادات، إلخ) -->
-            <!-- ... يمكنك الاحتفاظ بها كما هي ... -->
+            <!-- سجل النتائج -->
+            <div id="historySection" class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">📚 سجل النتائج</h3>
+                    <div class="flex gap-2">
+                        <button onclick="exportAllResults()" 
+                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium text-sm">
+                            📊 تصدير الكل
+                        </button>
+                        <button onclick="toggleHistory()" id="historyToggle"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                            عرض السجل
+                        </button>
+                    </div>
+                </div>
+                <div id="historyContent" class="hidden">
+                    <!-- فلاتر البحث -->
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="searchStudent" class="block text-sm font-medium text-gray-700 mb-1">البحث بالاسم:</label>
+                                <input type="text" id="searchStudent" placeholder="اسم الطالب..." 
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       onkeyup="filterHistory()">
+                            </div>
+                            <div>
+                                <label for="filterExam" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالاختبار:</label>
+                                <select id="filterExam" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        onchange="filterHistory()">
+                                    <option value="">جميع الاختبارات</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="sortBy" class="block text-sm font-medium text-gray-700 mb-1">ترتيب حسب:</label>
+                                <select id="sortBy" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        onchange="filterHistory()">
+                                    <option value="newest">الأحدث أولاً</option>
+                                    <option value="oldest">الأقدم أولاً</option>
+                                    <option value="highest">أعلى درجة</option>
+                                    <option value="lowest">أقل درجة</option>
+                                    <option value="name">الاسم أبجدياً</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- إحصائيات سريعة -->
+                    <div id="quickStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div class="bg-blue-100 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="totalExams">0</div>
+                            <div class="text-xs text-blue-800">إجمالي الاختبارات</div>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-green-600" id="avgScore">0%</div>
+                            <div class="text-xs text-green-800">متوسط الدرجات</div>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-yellow-600" id="topScore">0%</div>
+                            <div class="text-xs text-yellow-800">أعلى درجة</div>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-lg text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="uniqueStudents">0</div>
+                            <div class="text-xs text-purple-800">عدد الطلاب</div>
+                        </div>
+                    </div>
+                    
+                    <div id="historyList" class="space-y-3">
+                        <div class="text-center text-gray-500 py-8">
+                            لا توجد نتائج محفوظة بعد
+                        </div>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button onclick="clearHistory()" 
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                            🗑️ مسح السجل
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- إعدادات متقدمة -->
+            <div id="advancedSettings" class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-gray-800">⚙️ الإعدادات المتقدمة</h3>
+                    <button onclick="toggleAdvancedSettings()" id="advancedToggle"
+                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                        عرض الإعدادات
+                    </button>
+                </div>
+                <div id="advancedContent" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- إعدادات التصحيح -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-3">🎯 إعدادات التصحيح</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label for="passingGrade" class="block text-sm font-medium text-gray-700 mb-1">درجة النجاح (%):</label>
+                                    <input type="number" id="passingGrade" min="0" max="100" value="60" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                </div>
+                                <div>
+                                    <label for="gradingSystem" class="block text-sm font-medium text-gray-700 mb-1">نظام التقدير:</label>
+                                    <select id="gradingSystem" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="traditional">تقليدي (ممتاز، جيد جداً، جيد، مقبول، راسب)</option>
+                                        <option value="gpa">نظام GPA (A, B, C, D, F)</option>
+                                        <option value="numeric">رقمي (1-5)</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="showCorrectAnswers" checked 
+                                           class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="showCorrectAnswers" class="text-sm text-gray-700">عرض الإجابات الصحيحة في النتائج</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- إعدادات الكاميرا -->
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-800 mb-3">📷 إعدادات الكاميرا</h4>
+                            <div class="space-y-3">
+                                <div>
+                                    <label for="cameraResolution" class="block text-sm font-medium text-gray-700 mb-1">دقة الكاميرا:</label>
+                                    <select id="cameraResolution" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="720p">HD (1280x720)</option>
+                                        <option value="1080p">Full HD (1920x1080)</option>
+                                        <option value="4k">4K (3840x2160)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label for="imageQuality" class="block text-sm font-medium text-gray-700 mb-1">جودة الصورة:</label>
+                                    <input type="range" id="imageQuality" min="0.1" max="1" step="0.1" value="0.8" 
+                                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                        <span>منخفضة</span>
+                                        <span>عالية</span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="autoCapture" 
+                                           class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="autoCapture" class="text-sm text-gray-700">التقاط تلقائي عند اكتشاف الورقة</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- أدوات إضافية -->
+                    <div class="mt-6 bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-3">🛠️ أدوات إضافية</h4>
+                        <div class="flex flex-wrap gap-3">
+                            <button onclick="generateQRCode()" 
+                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                                📱 إنشاء رمز QR للاختبار
+                            </button>
+                            <button onclick="printAnswerSheet()" 
+                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                                🖨️ طباعة نموذج الإجابة
+                            </button>
+                            <button onclick="importAnswers()" 
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                                📥 استيراد إجابات من ملف
+                            </button>
+                            <button onclick="backupData()" 
+                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                                💾 نسخ احتياطي للبيانات
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>
