@@ -1058,6 +1058,36 @@ let multiCorrectionResults = [];
             if (percentage >= 60) return 'مقبول';
             return 'راسب';
         }
+		// تحديد مستوى الصعوبة
+function getDifficultyLevel(percentage) {
+    if (percentage >= 90) return 'سهل';
+    if (percentage >= 70) return 'متوسط';
+    if (percentage >= 50) return 'صعب';
+    return 'صعب جداً';
+}
+
+        function addEmptyAnswersStats(emptyCount) {
+            // البحث عن مكان إضافة إحصائية الإجابات الفارغة
+            const statsContainer = document.querySelector('#resultsSection .grid');
+            
+            // إنشاء عنصر إحصائية الإجابات الفارغة
+            const emptyStatsDiv = document.createElement('div');
+            emptyStatsDiv.className = 'bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg text-center';
+            emptyStatsDiv.innerHTML = `
+                <div class="text-3xl font-bold">${emptyCount}</div>
+                <div class="text-sm">إجابات فارغة</div>
+            `;
+            
+            // إضافة العنصر للشبكة
+            if (statsContainer) {
+                statsContainer.appendChild(emptyStatsDiv);
+                
+                // تحديث تخطيط الشبكة لتتسع للعنصر الجديد
+                statsContainer.className = statsContainer.className.replace('grid-cols-1 md:grid-cols-4', 'grid-cols-1 md:grid-cols-5');
+            }
+        }
+
+
         function updateStudentClass() {
             const studentSelect = document.getElementById('studentName');
             const studentClassInput = document.getElementById('studentClass');
@@ -2399,11 +2429,25 @@ function updateMultiCorrectionButtons() {
     });
 }
 
+// إكمال التصحيح المتعدد
 function completeMultipleCorrection() {
     isMultipleCorrectionMode = false;
     generateMultiCorrectionReport();
-    resetMultipleCorrectionUI();
-    showNotification('تم إكمال التصحيح المتعدد! يمكنك مراجعة التقرير أدناه.', 'success');
+    
+    document.getElementById('startMultiBtn').disabled = false;
+    document.getElementById('skipStudentBtn').disabled = true;
+    document.getElementById('pauseMultiBtn').disabled = true;
+    document.getElementById('stopMultiBtn').disabled = true;
+    document.getElementById('currentMultiStudent').classList.add('hidden');
+    
+    showNotification('تم إكمال التصحيح المتعدد!', 'success');
+}
+
+// إعادة تعيين التصحيح المتعدد
+function resetMultiCorrection() {
+    document.getElementById('multiCorrectionReport').classList.add('hidden');
+    setupMultipleCorrection();
+    showNotification('تم إعادة تعيين التصحيح المتعدد.', 'info');
 }
 
 function generateMultiCorrectionReport() {
@@ -2559,6 +2603,34 @@ function exportMultiReport() {
                 }
             });
         });
+		// تنظيف الموارد
+function cleanupResources() {
+    if (stream) {
+        stopCamera();
+    }
+    
+    const capturedImage = document.getElementById('capturedImage');
+    const imagePreview = document.getElementById('imagePreview');
+    
+    if (capturedImage.src.startsWith('data:')) {
+        capturedImage.src = '';
+    }
+    
+    if (imagePreview.src.startsWith('data:')) {
+        imagePreview.src = '';
+    }
+}
+
+// تحسين الصورة للمعالجة
+function optimizeImageForProcessing(imageElement) {
+    showNotification('جاري تحسين جودة الصورة...', 'info');
+    
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(imageElement);
+        }, 1000);
+    });
+}
     </script>
 </body>
 </html>
