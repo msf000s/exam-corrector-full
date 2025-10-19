@@ -8,7 +8,7 @@ import traceback
 app = Flask(__name__, static_folder='static')
 os.makedirs('static', exist_ok=True)
 
-# ⚙️ عدّل هذا حسب اختبارك (10 أسئلة × 4 خيارات)
+# ⚙️ الإجابات الصحيحة (عدّلها حسب اختبارك)
 ANSWER_KEY = ['B', 'C', 'A', 'D', 'B', 'A', 'C', 'D', 'A', 'B']
 
 def order_points(pts):
@@ -38,44 +38,74 @@ def four_point_transform(image, pts):
     M = cv2.getPerspectiveTransform(rect, dst)
     return cv2.warpPerspective(image, M, (maxWidth, maxHeight))
 
-def extract_answers(warped_gray):
-    # إحداثيات مخصصة لنموذجك (10 أسئلة × 4 خيارات)
-    bubbles_coords = [
-        # الجانب الأيمن (1-5)
-          # السؤال 1 (الإحداثيات من خريطة الصورة)
-    (670 - 16, 120 - 16, 32, 32), (612 - 17, 122 - 17, 34, 34), (552 - 14, 121 - 14, 28, 28),  (496 - 10, 117 - 10, 20, 20),  # D
+def extract_answers(warped_gray, num_questions=10, options_per_q=4):
+    """
+    اكتشف الفقاعات تلقائيًا وحدد الإجابة المظللة في كل سؤال
+    """
+    # 1. كشف الحواف
+    edges = cv2.Canny(warped_gray, 50, 150)
 
-        (920, 350, 40, 40), (870, 350, 40, 40), (820, 350, 40, 40), (770, 350, 40, 40),
-        (920, 450, 40, 40), (870, 450, 40, 40), (820, 450, 40, 40), (770, 450, 40, 40),
-        (920, 550, 40, 40), (870, 550, 40, 40), (820, 550, 40, 40), (770, 550, 40, 40),
-        (920, 650, 40, 40), (870, 650, 40, 40), (820, 650, 40, 40), (770, 650, 40, 40),
-        # الجانب الأيسر (6-10)
-        (360, 250, 40, 40), (310, 250, 40, 40), (260, 250, 40, 40), (210, 250, 40, 40),
-        (360, 350, 40, 40), (310, 350, 40, 40), (260, 350, 40, 40), (210, 350, 40, 40),
-        (360, 450, 40, 40), (310, 450, 40, 40), (260, 450, 40, 40), (210, 450, 40, 40),
-        (360, 550, 40, 40), (310, 550, 40, 40), (260, 550, 40, 40), (210, 550, 40, 40),
-        (360, 650, 40, 40), (310, 650, 40, 40), (260, 650, 40, 40), (210, 650, 40, 40),
-    ]
-    options = ['A', 'B', 'C', 'D']
+    # 2. العثور على الكنتورات (الحدود)
+    cnts = cv2.findContours(edges.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = imutils.grab_contours(cnts)
+
+    bubbles = []
+    for c in cnts:
+        # حساب محيط الكنتور
+        peri = cv2.arcLength(c, True)
+        # تقريب الشكل
+        approx = cv2.approxPolyDP(c, 0.02 * peri, True)
+
+        # نختار فقط الكنتورات التي تشبه الدوائر (4+ نقاط)
+        if len(approx) >= 5:
+            # حساب مركز الكنتور
+            M = cv2.moments(c)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+                # حساب نصف القطر التقريبي
+                _, _, w, h = cv2.boundingRect(c)
+                radius = min(w, h) // 2
+
+                # تحقق من أن الحجم مناسب للفقاعة (10-50 بكسل)
+                if 10 < radius < 50:
+                    bubbles.append((cX, cY, radius))
+
+    # 3. ترتيب الفقاعات حسب الموضع (من الأعلى لليسار)
+    bubbles = sorted(bubbles, key=lambda b: (b[1] // 50, b[0]))
+
+    # 4. تجميع الفقاعات حسب الأسئلة
     answers = []
-    for i in range(10):
+    for i in range(num_questions):
+        question_bubbles = bubbles[i * options_per_q:(i + 1) * options_per_q]
+        if len(question_bubbles) != options_per_q:
+            answers.append("فراغ")
+            continue
+
         best_choice = -1
         max_filled = 0
-        for c in range(4):
-            idx = i * 4 + c
-            x, y, w, h = bubbles_coords[idx]
-            if y + h > warped_gray.shape[0] or x + w > warped_gray.shape[1]:
-                answers.append("فراغ")
-                continue
-            roi = warped_gray[y:y+h, x:x+w]
+
+        for j, (x, y, r) in enumerate(question_bubbles):
+            # استخراج منطقة الفقاعة
+            roi_x = max(0, x - r)
+            roi_y = max(0, y - r)
+            roi_w = min(warped_gray.shape[1] - roi_x, 2 * r)
+            roi_h = min(warped_gray.shape[0] - roi_y, 2 * r)
+
+            roi = warped_gray[roi_y:roi_y + roi_h, roi_x:roi_x + roi_w]
             total = cv2.countNonZero(roi)
+
             if total > max_filled:
                 max_filled = total
-                best_choice = c
+                best_choice = j
+
+        # عتبة لتحديد "فارغ" (يمكنك تعديلها)
         if max_filled < 50:
             answers.append("فراغ")
         else:
+            options = ['A', 'B', 'C', 'D', 'E'][:options_per_q]
             answers.append(options[best_choice])
+
     return answers
 
 @app.route('/')
@@ -117,17 +147,16 @@ def correct():
         else:
             warped = gray
 
-        thresh = cv2.threshold(warped, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)[1]
-        student_answers = extract_answers(thresh)
+        # افترض أنك تعرف عدد الأسئلة من واجهتك (يمكن إرساله في الطلب)
+        num_questions = len(ANSWER_KEY)  # مثلاً 10
+        options_per_q = 4  # مثلاً 4 خيارات
+
+        student_answers = extract_answers(warped, num_questions, options_per_q)
 
         correct_count = sum(1 for s, c in zip(student_answers, ANSWER_KEY) if s == c)
         wrong_count = len(ANSWER_KEY) - correct_count
         percentage = round((correct_count / len(ANSWER_KEY)) * 100)
-print("عدد الفقاعات المكتشفة:", len(bubbles_coords))
-for i, (x, y, w, h) in enumerate(bubbles_coords):
-    roi = warped_gray[y:y+h, x:x+w]
-    total = cv2.countNonZero(roi)
-    print(f"الفراغ {i}: مناطق مظللة = {total}")
+
         return jsonify({
             "answers": student_answers,
             "correct_count": correct_count,
@@ -143,5 +172,3 @@ for i, (x, y, w, h) in enumerate(bubbles_coords):
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
-
-
