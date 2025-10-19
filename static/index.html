@@ -1318,64 +1318,23 @@ function showAnswerVerification() {
     const verificationGrid = document.getElementById('verificationGrid');
     const optionsCount = parseInt(document.getElementById('optionsCount').value);
     const options = optionsCount === 4 ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E'];
-    
     verificationGrid.innerHTML = '';
-    
+
     for (let i = 0; i < correctAnswers.length; i++) {
         const questionDiv = document.createElement('div');
-        
         const isEmptyAnswer = studentAnswers[i] === 'فراغ';
-        let confidenceLevel = Math.random();
-        
-        if (isEmptyAnswer) {
-            confidenceLevel = Math.max(0.2, confidenceLevel - 0.2);
-        }
-        
-        let confidence, confidenceClass, confidencePercentage;
-        
-        if (confidenceLevel > 0.8) {
-            confidence = 'عالية جداً';
-            confidenceClass = 'text-green-700';
-            confidencePercentage = Math.floor(90 + Math.random() * 10);
-        } else if (confidenceLevel > 0.6) {
-            confidence = 'عالية';
-            confidenceClass = 'text-green-600';
-            confidencePercentage = Math.floor(80 + Math.random() * 10);
-        } else if (confidenceLevel > 0.3) {
-            confidence = 'متوسطة';
-            confidenceClass = 'text-yellow-600';
-            confidencePercentage = Math.floor(60 + Math.random() * 20);
-        } else {
-            confidence = 'منخفضة';
-            confidenceClass = 'text-red-600';
-            confidencePercentage = Math.floor(30 + Math.random() * 30);
-        }
-        
-        const borderClass = isEmptyAnswer ? 'border-orange-300 bg-orange-50' :
-                           confidenceLevel > 0.6 ? 'border-green-300 bg-green-50' : 
-                           confidenceLevel > 0.3 ? 'border-yellow-300 bg-yellow-50' : 
-                           'border-red-300 bg-red-50';
-        
         const answerDisplay = isEmptyAnswer ? 
             '<div class="text-2xl font-bold text-orange-600 bg-orange-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto shadow-md border-2 border-dashed border-orange-400">∅</div>' :
             `<div class="text-2xl font-bold text-blue-600 bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto shadow-md">${studentAnswers[i]}</div>`;
-        
-        questionDiv.className = `p-4 rounded-lg border-2 ${borderClass}`;
+
+        questionDiv.className = `p-4 rounded-lg border-2 ${isEmptyAnswer ? 'border-orange-300 bg-orange-50' : 'border-blue-300 bg-blue-50'}`;
         questionDiv.innerHTML = `
             <div class="text-center mb-3">
                 <div class="text-sm font-medium text-gray-700">السؤال ${i + 1}</div>
-                <div class="text-xs ${confidenceClass} font-semibold">
-                    دقة القراءة: ${confidence} (${confidencePercentage}%)
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                    <div class="bg-gradient-to-r from-green-400 to-green-600 h-1.5 rounded-full transition-all duration-500" 
-                         style="width: ${confidencePercentage}%"></div>
-                </div>
             </div>
             <div class="text-center mb-3">
                 ${answerDisplay}
-                ${isEmptyAnswer ? '<div class="text-xs text-orange-600 mt-1">🔍 لم يتم العثور على إجابة</div>' : ''}
-                ${confidenceLevel < 0.6 && !isEmptyAnswer ? '<div class="text-xs text-orange-600 mt-1">⚠️ يُنصح بالمراجعة</div>' : ''}
+                ${isEmptyAnswer ? '<div class="text-xs text-orange-600 mt-1">لم يتم اكتشاف إجابة</div>' : ''}
             </div>
             <select id="verify${i}" class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 <option value="فراغ" ${isEmptyAnswer ? 'selected' : ''}>فراغ (لا توجد إجابة)</option>
@@ -1384,20 +1343,12 @@ function showAnswerVerification() {
         `;
         verificationGrid.appendChild(questionDiv);
     }
-    
-    const totalConfidence = Math.floor(85 + Math.random() * 10);
-    const emptyCount = studentAnswers.filter(ans => ans === 'فراغ').length;
-    
+
     document.getElementById('verificationSection').classList.remove('hidden');
-    
-    let message = `تم قراءة الإجابات بدقة ${totalConfidence}%!`;
-    if (emptyCount > 0) {
-        message += ` تم اكتشاف ${emptyCount} إجابة فارغة.`;
-    }
-    message += ' يرجى مراجعة النتائج والتأكد من صحتها.';
-    
-    showNotification(message, 'success');
+    showNotification('تم استلام الإجابات من الخادم. يرجى مراجعتها والتأكد من صحتها.', 'success');
 }
+
+
 
 function confirmAnswers() {
     for (let i = 0; i < correctAnswers.length; i++) {
