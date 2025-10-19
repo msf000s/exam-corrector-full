@@ -121,7 +121,11 @@ def correct():
         correct_count = sum(1 for s, c in zip(student_answers, ANSWER_KEY) if s == c)
         wrong_count = len(ANSWER_KEY) - correct_count
         percentage = round((correct_count / len(ANSWER_KEY)) * 100)
-
+print("عدد الفقاعات المكتشفة:", len(bubbles_coords))
+for i, (x, y, w, h) in enumerate(bubbles_coords):
+    roi = warped_gray[y:y+h, x:x+w]
+    total = cv2.countNonZero(roi)
+    print(f"الفراغ {i}: مناطق مظللة = {total}")
         return jsonify({
             "answers": student_answers,
             "correct_count": correct_count,
@@ -137,3 +141,4 @@ def correct():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=False)
+
