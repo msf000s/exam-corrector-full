@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>تطبيق تصحيح الاختبارات باستخدام OpenCV</title>
-<script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <title>تطبيق تصحيح الاختبارات - الواجهة التجريبية</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { box-sizing: border-box; }
         .camera-container {
             position: relative;
             max-width: 100%;
@@ -33,901 +31,624 @@
         }
         .correct-answer { background: linear-gradient(135deg, #10b981, #059669); }
         .wrong-answer { background: linear-gradient(135deg, #ef4444, #dc2626); }
-        .camera-button {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-            transition: all 0.3s ease;
-        }
-        .camera-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
-        }
+        .empty-answer { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .debug-image { max-height: 400px; border: 2px solid #e5e7eb; border-radius: 8px; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-full font-sans">
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen font-sans">
     <div class="container mx-auto px-4 py-8">
-        <header class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">📱 تطبيق تصحيح الاختبارات</h1>
-            <p class="text-gray-600 text-lg">استخدم الكاميرا لتصحيح إجابات الطلاب تلقائياً</p>
+        <!-- رأس الصفحة -->
+        <header class="text-center mb-12">
+            <div class="bg-white rounded-2xl shadow-lg p-8 max-w-4xl mx-auto">
+                <h1 class="text-5xl font-bold text-gray-800 mb-4">🎯 تطبيق تصحيح الاختبارات</h1>
+                <p class="text-xl text-gray-600 mb-6">واجهة تجريبية لاختبار نظام تصحيح الاختبارات الآلي باستخدام الذكاء الاصطناعي</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div class="bg-green-100 p-3 rounded-lg">
+                        <div class="font-semibold text-green-800">⚡ سريع</div>
+                        <div class="text-green-600">تصحيح آلي فوري</div>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <div class="font-semibold text-blue-800">🎯 دقيق</div>
+                        <div class="text-blue-600">خوارزميات متقدمة</div>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-lg">
+                        <div class="font-semibold text-purple-800">📊 مفصل</div>
+                        <div class="text-purple-600">تقارير وتحليلات</div>
+                    </div>
+                </div>
+            </div>
         </header>
 
-        <main class="max-w-4xl mx-auto">
-            <!-- إدارة الطلاب -->
+        <main class="max-w-6xl mx-auto">
+            <!-- قسم الإعدادات -->
             <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    👥 إدارة الطلاب
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    ⚙️ إعدادات التصحيح
                 </h2>
                 
-                <!-- استيراد قائمة الطلاب -->
-                <div class="bg-blue-50 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-semibold text-blue-800 mb-3">📊 استيراد من ملف Excel</h3>
-                    <div class="flex flex-col sm:flex-row gap-4 mb-4">
-                        <button onclick="downloadStudentsTemplate()" 
-                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2">
-                            📥 تحميل نموذج Excel
-                        </button>
-                        <div class="flex-1">
-                            <input type="file" id="studentsFileInput" accept=".xlsx,.xls,.csv" 
-                                   class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
-                        </div>
-                    </div>
-                    <p class="text-sm text-blue-700">
-                        💡 الملف يجب أن يحتوي على عمودين: "اسم الطالب" و "الفصل" (سيتم إنشاء رقم الطالب تلقائياً)
-                        <br>📋 يدعم ملفات: .xlsx, .xls, .csv
-                    </p>
-                </div>
-
-                <!-- قائمة الطلاب -->
-                <div id="studentsListSection" class="hidden">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">📋 قائمة الطلاب</h3>
-                        <div class="flex gap-2">
-                            <button onclick="toggleMultipleCorrection()" id="multiCorrectionBtn"
-                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                                🔄 تصحيح متعدد
-                            </button>
-                            <button onclick="clearStudentsList()" 
-                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">
-                                🗑️ مسح القائمة
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <!-- الإجابات الصحيحة -->
+                    <div class="bg-blue-50 rounded-lg p-4">
+                        <h3 class="font-semibold text-blue-800 mb-3">🔑 الإجابات الصحيحة</h3>
+                        <div class="space-y-2">
+                            <textarea id="correctAnswers" rows="3" class="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="أدخل الإجابات الصحيحة مفصولة بفاصلة (مثال: B,C,A,D,B,A,C,D,A,B)">B,C,A,D,B,A,C,D,A,B</textarea>
+                            <button onclick="updateAnswerKey()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium text-sm">
+                                تحديث الإجابات
                             </button>
                         </div>
                     </div>
-                    
-                    <!-- إحصائيات سريعة -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div class="bg-blue-100 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-blue-600" id="totalStudentsCount">0</div>
-                            <div class="text-xs text-blue-800">إجمالي الطلاب</div>
-                        </div>
-                        <div class="bg-green-100 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-green-600" id="correctedCount">0</div>
-                            <div class="text-xs text-green-800">تم تصحيحها</div>
-                        </div>
-                        <div class="bg-yellow-100 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-yellow-600" id="pendingCount">0</div>
-                            <div class="text-xs text-yellow-800">في الانتظار</div>
-                        </div>
-                        <div class="bg-purple-100 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-purple-600" id="uniqueClassesCount">0</div>
-                            <div class="text-xs text-purple-800">عدد الفصول</div>
-                        </div>
-                    </div>
 
-                    <!-- فلاتر البحث -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- إعدادات الأسئلة -->
+                    <div class="bg-green-50 rounded-lg p-4">
+                        <h3 class="font-semibold text-green-800 mb-3">📝 إعدادات الأسئلة</h3>
+                        <div class="space-y-3">
                             <div>
-                                <label for="searchStudentName" class="block text-sm font-medium text-gray-700 mb-1">البحث بالاسم:</label>
-                                <input type="text" id="searchStudentName" placeholder="اسم الطالب..." 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                       onkeyup="filterStudentsList()">
+                                <label class="block text-sm font-medium text-green-700 mb-1">عدد الأسئلة:</label>
+                                <input type="number" id="numQuestions" min="1" max="50" value="10" class="w-full px-3 py-2 border border-green-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent">
                             </div>
                             <div>
-                                <label for="filterClass" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالفصل:</label>
-                                <select id="filterClass" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        onchange="filterStudentsList()">
-                                    <option value="">جميع الفصول</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-1">حالة التصحيح:</label>
-                                <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        onchange="filterStudentsList()">
-                                    <option value="">الكل</option>
-                                    <option value="corrected">تم التصحيح</option>
-                                    <option value="pending">في الانتظار</option>
+                                <label class="block text-sm font-medium text-green-700 mb-1">عدد الخيارات:</label>
+                                <select id="optionsPerQuestion" class="w-full px-3 py-2 border border-green-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                    <option value="4">4 خيارات (A,B,C,D)</option>
+                                    <option value="5">5 خيارات (A,B,C,D,E)</option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
-                    <!-- قائمة الطلاب -->
-                    <div id="studentsList" class="space-y-2 max-h-64 overflow-y-auto">
-                        <!-- سيتم ملؤها ديناميكياً -->
+                    <!-- خيارات إضافية -->
+                    <div class="bg-purple-50 rounded-lg p-4">
+                        <h3 class="font-semibold text-purple-800 mb-3">🔧 خيارات إضافية</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="debugMode" class="mr-2 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                                <span class="text-sm text-purple-700">وضع التصحيح (عرض صورة التحليل)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" id="autoProcess" checked class="mr-2 h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                                <span class="text-sm text-purple-700">معالجة تلقائية بعد الرفع</span>
+                            </label>
+                            <button onclick="testConnection()" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium text-sm">
+                                اختبار الاتصال
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- اختيار الطالب الحالي -->
-                <div id="currentStudentSection" class="hidden bg-green-50 rounded-lg p-4 mb-4">
-                    <h3 class="text-lg font-semibold text-green-800 mb-3">👤 الطالب الحالي</h3>
+                <!-- حالة الخادم -->
+                <div id="serverStatus" class="bg-gray-100 rounded-lg p-4 hidden">
                     <div class="flex items-center justify-between">
-                        <div>
-                            <div class="font-semibold" id="currentStudentName">-</div>
-                            <div class="text-sm text-gray-600">
-                                الفصل: <span id="currentStudentClass">-</span>
+                        <div class="flex items-center gap-3">
+                            <div id="statusIcon" class="w-8 h-8 rounded-full flex items-center justify-center"></div>
+                            <div>
+                                <div id="statusText" class="font-semibold"></div>
+                                <div id="statusDetails" class="text-sm text-gray-600"></div>
                             </div>
                         </div>
-                        <button onclick="selectDifferentStudent()" 
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                            تغيير الطالب
-                        </button>
+                        <div id="statusTime" class="text-sm text-gray-500"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- التصحيح المتعدد -->
-            <div id="multipleCorrectionSection" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    🔄 التصحيح المتعدد
-                </h2>
-                
-                <div class="bg-purple-50 rounded-lg p-4 mb-6">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-purple-600">🎯</span>
-                        <span class="font-semibold text-purple-800">تصحيح أوراق عدة طلاب بالتتابع</span>
-                    </div>
-                    <p class="text-sm text-purple-700">سيتم تصحيح أوراق جميع الطلاب في القائمة تلقائياً. صوّر الأوراق بالترتيب وسيتم الانتقال للطالب التالي تلقائياً.</p>
-                </div>
+            <!-- قسم رفع الصور -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- رفع الصورة -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        📷 رفع صورة ورقة الإجابة
+                    </h2>
 
-                <!-- شريط التقدم -->
-                <div class="mb-6">
-                    <div class="flex justify-between text-sm text-gray-600 mb-2">
-                        <span>التقدم</span>
-                        <span id="progressText">0 من 0</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-3">
-                        <div id="progressBar" class="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
-                    </div>
-                </div>
+                    <!-- طرق الرفع -->
+                    <div class="flex flex-col gap-4 mb-6">
+                        <!-- رفع ملف -->
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                            <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                            <div class="mb-4">
+                                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <span class="text-2xl">📁</span>
+                                </div>
+                                <h3 class="font-semibold text-gray-800 mb-1">رفع من الجهاز</h3>
+                                <p class="text-sm text-gray-600">اختر صورة من جهازك</p>
+                            </div>
+                            <button onclick="document.getElementById('imageUpload').click()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+                                اختر صورة
+                            </button>
+                        </div>
 
-                <!-- الطالب الحالي في التصحيح المتعدد -->
-                <div id="currentMultiStudent" class="bg-blue-50 rounded-lg p-4 mb-6 hidden">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <div class="text-lg font-semibold text-blue-800" id="multiStudentName">-</div>
-                            <div class="text-sm text-blue-600">
-                                الفصل: <span id="multiStudentClass">-</span>
+                        <!-- السحب والإفلات -->
+                        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-green-400 transition-colors">
+                            <div class="mb-4">
+                                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <span class="text-2xl">⬇️</span>
+                                </div>
+                                <h3 class="font-semibold text-gray-800 mb-1">سحب وإفلات</h3>
+                                <p class="text-sm text-gray-600">اسحب الصورة وأفلتها هنا</p>
+                            </div>
+                            <p class="text-xs text-gray-500">يدعم: JPG, PNG, JPEG (الحد الأقصى: 10MB)</p>
+                        </div>
+                    </div>
+
+                    <!-- معاينة الصورة -->
+                    <div id="imagePreviewSection" class="hidden">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">معاينة الصورة:</h3>
+                        <div class="border-2 border-gray-200 rounded-lg p-4">
+                            <img id="imagePreview" class="w-full h-64 object-contain rounded-lg mb-4">
+                            <div class="flex gap-2">
+                                <button onclick="processImage()" id="processBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium">
+                                    🔍 بدء التصحيح
+                                </button>
+                                <button onclick="clearImage()" class="px-4 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg font-medium">
+                                    ✕
+                                </button>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <div class="text-sm text-blue-600">الطالب رقم</div>
-                            <div class="text-2xl font-bold text-blue-800" id="currentStudentNumber">1</div>
-                        </div>
                     </div>
                 </div>
 
-                <!-- أزرار التحكم -->
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="startMultipleCorrection()" id="startMultiBtn"
-                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
-                        🚀 بدء التصحيح المتعدد
-                    </button>
-                    <button onclick="skipCurrentStudent()" id="skipStudentBtn" disabled
-                            class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                        ⏭️ تخطي هذا الطالب
-                    </button>
-                    <button onclick="pauseMultipleCorrection()" id="pauseMultiBtn" disabled
-                            class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                        ⏸️ إيقاف مؤقت
-                    </button>
-                    <button onclick="stopMultipleCorrection()" id="stopMultiBtn" disabled
-                            class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                        ⏹️ إيقاف التصحيح
-                    </button>
-                </div>
+                <!-- الكاميرا -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        📹 التصوير المباشر
+                    </h2>
 
-                <!-- تقرير التصحيح المتعدد -->
-                <div id="multiCorrectionReport" class="hidden mt-6 bg-gray-50 rounded-lg p-4">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">📊 تقرير التصحيح المتعدد</h3>
-                    <div id="multiReportContent">
-                        <!-- سيتم ملؤه ديناميكياً -->
-                    </div>
-                    <div class="mt-4 flex gap-4 justify-center">
-                        <button onclick="exportMultiReport()" 
-                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                            📄 تصدير التقرير
-                        </button>
-                        <button onclick="resetMultiCorrection()" 
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                            🔄 تصحيح جديد
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- إعداد الإجابات الصحيحة -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    ⚙️ إعداد الإجابات الصحيحة
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="questionCount" class="block text-sm font-medium text-gray-700 mb-2">عدد الأسئلة:</label>
-                        <input type="number" id="questionCount" min="1" max="50" value="10" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label for="optionsCount" class="block text-sm font-medium text-gray-700 mb-2">عدد الخيارات لكل سؤال:</label>
-                        <select id="optionsCount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="4">4 خيارات (A، B، C، D)</option>
-                            <option value="5">5 خيارات (A، B، C، D، E)</option>
-                        </select>
-                    </div>
-                </div>
-                <button onclick="generateAnswerSheet()" 
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                    إنشاء نموذج الإجابات
-                </button>
-            </div>
-
-            <!-- نموذج الإجابات الصحيحة -->
-            <div id="answerSheet" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">📝 أدخل الإجابات الصحيحة:</h3>
-                <div id="answersGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4"></div>
-                <button onclick="saveCorrectAnswers()" 
-                        class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                    حفظ الإجابات الصحيحة
-                </button>
-            </div>
-
-            <!-- قسم الكاميرا وتحميل الصور -->
-            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                    📷 تصوير أو تحميل ورقة الإجابة
-                </h2>
-                
-                <!-- خيارات التصوير والتحميل -->
-                <div class="flex flex-col sm:flex-row gap-4 mb-6">
-                    <button onclick="showCameraSection()" id="cameraTabBtn"
-                            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">
-                        📹 استخدام الكاميرا
-                    </button>
-                    <button onclick="showUploadSection()" id="uploadTabBtn"
-                            class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">
-                        📁 تحميل صورة
-                    </button>
-                </div>
-
-                <!-- قسم الكاميرا -->
-                <div id="cameraSection">
                     <div class="camera-container mb-4">
-                        <video id="camera" autoplay playsinline class="w-full h-80 object-cover"></video>
+                        <video id="camera" autoplay playsinline class="w-full h-64 object-cover"></video>
                         <canvas id="canvas" class="hidden"></canvas>
                         <div class="overlay"></div>
                         <div class="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg text-sm">
-                            ضع ورقة الإجابة داخل الإطار المنقط
+                            ضع ورقة الإجابة داخل الإطار
                         </div>
                     </div>
 
-                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button onclick="startCamera()" id="startBtn"
-                                class="camera-button text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
+                    <div class="flex flex-col gap-3">
+                        <button onclick="startCamera()" id="startCameraBtn" class="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium">
                             📹 تشغيل الكاميرا
                         </button>
-                        <button onclick="captureImage()" id="captureBtn" disabled
-                                class="bg-gray-400 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:cursor-not-allowed">
-                            📸 التقاط الصورة
+                        <button onclick="captureFromCamera()" id="captureBtn" disabled class="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            📸 التقاط صورة
                         </button>
-                        <button onclick="stopCamera()" id="stopBtn" disabled
-                                class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:bg-gray-400">
+                        <button onclick="stopCamera()" id="stopCameraBtn" disabled class="bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-medium disabled:bg-gray-400 disabled:cursor-not-allowed">
                             ⏹️ إيقاف الكاميرا
                         </button>
                     </div>
                 </div>
-
-                <!-- قسم تحميل الصور -->
-                <div id="uploadSection" class="hidden">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4 border-t pt-4">تحميل صورة ورقة الإجابة:</h3>
-                    <input type="file" id="imageInput" accept="image/*" capture="environment" class="w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-full file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-50 file:text-blue-700
-                        hover:file:bg-blue-100" />
-
-                    <!-- تم تعديل هذه المنطقة لملائمة الصور بشكل أفضل -->
-                    <div id="imagePreviewContainer" class="mt-4 hidden border border-gray-300 rounded-lg p-2 max-h-96 overflow-y-auto">
-                        <img id="imagePreview" class="w-full h-auto object-contain rounded-lg" alt="معاينة صورة ورقة الإجابة" />
-                    </div>
-
-                    <div class="text-center mt-4">
-                        <button onclick="processUploadedImage()" id="processUploadBtn" disabled
-                                class="bg-gray-400 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 mx-auto disabled:cursor-not-allowed">
-                            🔍 تحليل الصورة المحملة
-                        </button>
-                    </div>
-                </div>
             </div>
 
-            <!-- الصورة الملتقطة -->
-            <div id="capturedSection" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">🖼️ الصورة الملتقطة:</h3>
-                <img id="capturedImage" class="w-full max-w-md mx-auto rounded-lg shadow-md mb-4">
-                <div class="text-center">
-                    <button onclick="processAnswers()" 
-                            class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium">
-                        🔍 تحليل الإجابات
+            <!-- النتائج والتحليل -->
+            <div id="resultsSection" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden result-animation">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    📊 نتائج التصحيح
+                </h2>
+
+                <!-- الإحصائيات -->
+                <div id="resultsStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <!-- سيتم تعبئتها بالنتائج -->
+                </div>
+
+                <!-- الإجابات التفصيلية -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">الإجابات المكتشفة:</h3>
+                    <div id="answersGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                        <!-- سيتم تعبئتها بالإجابات -->
+                    </div>
+                </div>
+
+                <!-- صورة التصحيح -->
+                <div id="debugSection" class="hidden">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">صورة التحليل:</h3>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <img id="debugImage" class="debug-image mx-auto">
+                        <p class="text-sm text-gray-600 text-center mt-2">الأخضر: فقاعات مكتشفة، الأحمر: فقاعات غير مملوءة</p>
+                    </div>
+                </div>
+
+                <!-- معلومات إضافية -->
+                <div id="additionalInfo" class="bg-gray-50 rounded-lg p-4 hidden">
+                    <h3 class="font-semibold text-gray-800 mb-3">معلومات التحليل:</h3>
+                    <div id="analysisInfo" class="text-sm text-gray-600 space-y-1">
+                        <!-- معلومات التحليل -->
+                    </div>
+                </div>
+
+                <!-- أزرار التحكم -->
+                <div class="flex flex-wrap gap-3 justify-center mt-6">
+                    <button onclick="downloadResults()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium">
+                        📄 حفظ النتائج
                     </button>
-                </div>
-            </div>
-
-            <!-- إدخال بيانات الطالب -->
-            <div id="studentInfoSection" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
-                <h3 class="text-xl font-bold text-gray-800 mb-4">👤 بيانات الطالب:</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="studentName" class="block text-sm font-medium text-gray-700 mb-2">اسم الطالب:</label>
-                        <select id="studentName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                onchange="updateStudentClass()">
-                            <option value="">اختر اسم الطالب</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label for="studentClass" class="block text-sm font-medium text-gray-700 mb-2">الفصل:</label>
-                        <input type="text" id="studentClass" placeholder="الفصل" readonly
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label for="examName" class="block text-sm font-medium text-gray-700 mb-2">اسم الاختبار:</label>
-                        <input type="text" id="examName" placeholder="مثال: اختبار الرياضيات - الفصل الأول" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label for="examDate" class="block text-sm font-medium text-gray-700 mb-2">تاريخ الاختبار:</label>
-                        <input type="date" id="examDate" 
-                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                </div>
-            </div>
-
-            <!-- التأكد من إجابات الطالب -->
-            <div id="verificationSection" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
-                <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">🔍 التأكد من إجابات الطالب</h3>
-                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                    <div class="flex items-center gap-2 mb-2">
-                        <span class="text-yellow-600">⚠️</span>
-                        <span class="font-semibold text-yellow-800">يرجى مراجعة الإجابات المقروءة والتأكد من صحتها</span>
-                    </div>
-                    <p class="text-sm text-yellow-700">قد تحتاج بعض الإجابات للتصحيح اليدوي إذا لم تكن واضحة في الصورة</p>
-                </div>
-                
-                <div id="verificationGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6"></div>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="confirmAnswers()" 
-                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
-                        ✅ تأكيد الإجابات والمتابعة
+                    <button onclick="resetTest()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+                        🔄 اختبار جديد
                     </button>
-                    <button onclick="manualEntry()" 
-                            class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
-                        ✏️ إدخال يدوي
+                    <button onclick="shareResults()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium">
+                        📤 مشاركة النتائج
                     </button>
                 </div>
             </div>
 
-            <!-- نتائج التصحيح -->
-            <div id="resultsSection" class="bg-white rounded-xl shadow-lg p-6 hidden result-animation">
-                <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">📊 نتائج التصحيح</h3>
-                
-                <!-- بيانات الطالب في النتائج -->
-                <div id="studentResultInfo" class="bg-gray-50 rounded-lg p-4 mb-6 hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div><strong>الطالب:</strong> <span id="resultStudentName">-</span></div>
-                        <div><strong>الفصل:</strong> <span id="resultStudentClass">-</span></div>
-                        <div><strong>الاختبار:</strong> <span id="resultExamName">-</span></div>
-                        <div><strong>التاريخ:</strong> <span id="resultExamDate">-</span></div>
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-lg text-center">
-                        <div class="text-3xl font-bold" id="correctCount">0</div>
-                        <div class="text-sm">إجابات صحيحة</div>
-                    </div>
-                    <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-4 rounded-lg text-center">
-                        <div class="text-3xl font-bold" id="wrongCount">0</div>
-                        <div class="text-sm">إجابات خاطئة</div>
-                    </div>
-                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-lg text-center">
-                        <div class="text-3xl font-bold" id="scorePercentage">0%</div>
-                        <div class="text-sm">النسبة المئوية</div>
-                    </div>
-                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-lg text-center">
-                        <div class="text-2xl font-bold" id="letterGrade">-</div>
-                        <div class="text-sm">التقدير</div>
-                    </div>
-                </div>
-
-                <!-- الرسم البياني للنتائج -->
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-3">📈 التحليل البصري:</h4>
-                    <div class="flex items-end justify-center space-x-2 h-32 mb-4" id="chartContainer">
-                        <div class="flex flex-col items-center">
-                            <div id="correctBar" class="bg-green-500 w-16 rounded-t transition-all duration-1000" style="height: 0%"></div>
-                            <span class="text-xs mt-1 text-gray-600">صحيحة</span>
-                        </div>
-                        <div class="flex flex-col items-center">
-                            <div id="wrongBar" class="bg-red-500 w-16 rounded-t transition-all duration-1000" style="height: 0%"></div>
-                            <span class="text-xs mt-1 text-gray-600">خاطئة</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="detailedResults" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6"></div>
-                
-                <!-- إحصائيات إضافية -->
-                <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-3">📋 تحليل مفصل:</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-blue-600" id="timeSpent">-</div>
-                            <div class="text-gray-600">وقت التصحيح</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-green-600" id="accuracy">-</div>
-                            <div class="text-gray-600">دقة القراءة</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-purple-600" id="difficulty">-</div>
-                            <div class="text-gray-600">مستوى الصعوبة</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button onclick="exportResults()" 
-                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
-                        📄 تصدير النتائج
-                    </button>
-                    <button onclick="saveToHistory()" 
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
-                        💾 حفظ في السجل
-                    </button>
-                    <button onclick="resetApp()" 
-                            class="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
-                        🔄 تصحيح ورقة جديدة
+            <!-- سجل الاختبارات -->
+            <div class="bg-white rounded-xl shadow-lg p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        📚 سجل الاختبارات
+                    </h2>
+                    <button onclick="clearHistory()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                        مسح السجل
                     </button>
                 </div>
-            </div>
 
-            <!-- سجل النتائج -->
-            <div id="historySection" class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">📚 سجل النتائج</h3>
-                    <div class="flex gap-2">
-                        <button onclick="exportAllResults()" 
-                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium text-sm">
-                            📊 تصدير الكل
-                        </button>
-                        <button onclick="toggleHistory()" id="historyToggle"
-                                class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                            عرض السجل
-                        </button>
-                    </div>
-                </div>
-                <div id="historyContent" class="hidden">
-                    <!-- فلاتر البحث -->
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="searchStudent" class="block text-sm font-medium text-gray-700 mb-1">البحث بالاسم:</label>
-                                <input type="text" id="searchStudent" placeholder="اسم الطالب..." 
-                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                       onkeyup="filterHistory()">
-                            </div>
-                            <div>
-                                <label for="filterExam" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالاختبار:</label>
-                                <select id="filterExam" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        onchange="filterHistory()">
-                                    <option value="">جميع الاختبارات</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="sortBy" class="block text-sm font-medium text-gray-700 mb-1">ترتيب حسب:</label>
-                                <select id="sortBy" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                        onchange="filterHistory()">
-                                    <option value="newest">الأحدث أولاً</option>
-                                    <option value="oldest">الأقدم أولاً</option>
-                                    <option value="highest">أعلى درجة</option>
-                                    <option value="lowest">أقل درجة</option>
-                                    <option value="name">الاسم أبجدياً</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- إحصائيات سريعة -->
-                    <div id="quickStats" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div class="bg-blue-100 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-blue-600" id="totalExams">0</div>
-                            <div class="text-xs text-blue-800">إجمالي الاختبارات</div>
-                        </div>
-                        <div class="bg-green-100 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-green-600" id="avgScore">0%</div>
-                            <div class="text-xs text-green-800">متوسط الدرجات</div>
-                        </div>
-                        <div class="bg-yellow-100 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-yellow-600" id="topScore">0%</div>
-                            <div class="text-xs text-yellow-800">أعلى درجة</div>
-                        </div>
-                        <div class="bg-purple-100 p-3 rounded-lg text-center">
-                            <div class="text-2xl font-bold text-purple-600" id="uniqueStudents">0</div>
-                            <div class="text-xs text-purple-800">عدد الطلاب</div>
-                        </div>
-                    </div>
-                    
-                    <div id="historyList" class="space-y-3">
-                        <div class="text-center text-gray-500 py-8">
-                            لا توجد نتائج محفوظة بعد
-                        </div>
-                    </div>
-                    <div class="text-center mt-4">
-                        <button onclick="clearHistory()" 
-                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                            🗑️ مسح السجل
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- إعدادات متقدمة -->
-            <div id="advancedSettings" class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">⚙️ الإعدادات المتقدمة</h3>
-                    <button onclick="toggleAdvancedSettings()" id="advancedToggle"
-                            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                        عرض الإعدادات
-                    </button>
-                </div>
-                <div id="advancedContent" class="hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- إعدادات التصحيح -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h4 class="font-semibold text-gray-800 mb-3">🎯 إعدادات التصحيح</h4>
-                            <div class="space-y-3">
-                                <div>
-                                    <label for="passingGrade" class="block text-sm font-medium text-gray-700 mb-1">درجة النجاح (%):</label>
-                                    <input type="number" id="passingGrade" min="0" max="100" value="60" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                </div>
-                                <div>
-                                    <label for="gradingSystem" class="block text-sm font-medium text-gray-700 mb-1">نظام التقدير:</label>
-                                    <select id="gradingSystem" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <option value="traditional">تقليدي (ممتاز، جيد جداً، جيد، مقبول، راسب)</option>
-                                        <option value="gpa">نظام GPA (A, B, C, D, F)</option>
-                                        <option value="numeric">رقمي (1-5)</option>
-                                    </select>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="showCorrectAnswers" checked 
-                                           class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                    <label for="showCorrectAnswers" class="text-sm text-gray-700">عرض الإجابات الصحيحة في النتائج</label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- إعدادات الكاميرا -->
-                        <div class="bg-gray-50 rounded-lg p-4">
-                            <h4 class="font-semibold text-gray-800 mb-3">📷 إعدادات الكاميرا</h4>
-                            <div class="space-y-3">
-                                <div>
-                                    <label for="cameraResolution" class="block text-sm font-medium text-gray-700 mb-1">دقة الكاميرا:</label>
-                                    <select id="cameraResolution" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                        <option value="720p">HD (1280x720)</option>
-                                        <option value="1080p">Full HD (1920x1080)</option>
-                                        <option value="4k">4K (3840x2160)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="imageQuality" class="block text-sm font-medium text-gray-700 mb-1">جودة الصورة:</label>
-                                    <input type="range" id="imageQuality" min="0.1" max="1" step="0.1" value="0.8" 
-                                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
-                                    <div class="flex justify-between text-xs text-gray-500 mt-1">
-                                        <span>منخفضة</span>
-                                        <span>عالية</span>
-                                    </div>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="autoCapture" 
-                                           class="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                                    <label for="autoCapture" class="text-sm text-gray-700">التقاط تلقائي عند اكتشاف الورقة</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- أدوات إضافية -->
-                    <div class="mt-6 bg-gray-50 rounded-lg p-4">
-                        <h4 class="font-semibold text-gray-800 mb-3">🛠️ أدوات إضافية</h4>
-                        <div class="flex flex-wrap gap-3">
-                            <button onclick="generateQRCode()" 
-                                    class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                                📱 إنشاء رمز QR للاختبار
-                            </button>
-                            <button onclick="printAnswerSheet()" 
-                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                                🖨️ طباعة نموذج الإجابة
-                            </button>
-                            <button onclick="importAnswers()" 
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                                📥 استيراد إجابات من ملف
-                            </button>
-                            <button onclick="backupData()" 
-                                    class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                                💾 نسخ احتياطي للبيانات
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- شرح طريقة عمل التطبيق -->
-            <div class="bg-gradient-to-r from-green-600 to-teal-600 rounded-xl shadow-lg p-6 text-white mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                            📖
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold">كيف يعمل التطبيق؟</h3>
-                            <p class="text-sm opacity-90">شرح مفصل لطريقة قراءة وتصحيح الإجابات</p>
-                        </div>
-                    </div>
-                    <button onclick="toggleHowItWorks()" id="howItWorksToggle"
-                            class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                        عرض الشرح
-                    </button>
-                </div>
-                <div id="howItWorksContent" class="hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="bg-white bg-opacity-10 rounded-lg p-4">
-                            <h4 class="font-semibold mb-3 flex items-center gap-2">
-                                🔍 كيف يقرأ التطبيق الإجابات؟
-                            </h4>
-                            <div class="text-sm space-y-2 opacity-90">
-                                <p><strong>1. تحليل الصورة:</strong> يستخدم التطبيق تقنيات معالجة الصور لتحديد مناطق الإجابات</p>
-                                <p><strong>2. التعرف على الأنماط:</strong> يبحث عن الدوائر المملوءة أو العلامات المرسومة</p>
-                                <p><strong>3. المقارنة:</strong> يقارن كثافة اللون في كل خيار لتحديد الإجابة المختارة</p>
-                                <p><strong>4. التحقق:</strong> يعرض النتائج للمراجعة اليدوية قبل التصحيح النهائي</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white bg-opacity-10 rounded-lg p-4">
-                            <h4 class="font-semibold mb-3 flex items-center gap-2">
-                                ⚙️ التقنيات المستخدمة
-                            </h4>
-                            <div class="text-sm space-y-2 opacity-90">
-                                <p><strong>• معالجة الصور:</strong> تحويل الصورة لرمادي وتحسين التباين</p>
-                                <p><strong>• كشف الحواف:</strong> تحديد حدود الدوائر والمربعات</p>
-                                <p><strong>• تحليل الكثافة:</strong> قياس مستوى التعبئة في كل خيار</p>
-                                <p><strong>• الذكاء الاصطناعي:</strong> خوارزميات التعلم لتحسين الدقة</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 bg-white bg-opacity-10 rounded-lg p-4">
-                        <h4 class="font-semibold mb-3 flex items-center gap-2">
-                            📋 خطوات التصحيح التفصيلية
-                        </h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div class="bg-white bg-opacity-10 rounded-lg p-3">
-                                <div class="font-semibold text-yellow-200 mb-2">المرحلة الأولى: الإعداد</div>
-                                <ul class="space-y-1 opacity-90">
-                                    <li>• إدخال الإجابات الصحيحة</li>
-                                    <li>• تحديد عدد الأسئلة والخيارات</li>
-                                    <li>• إدخال بيانات الطالب</li>
-                                </ul>
-                            </div>
-                            <div class="bg-white bg-opacity-10 rounded-lg p-3">
-                                <div class="font-semibold text-blue-200 mb-2">المرحلة الثانية: القراءة</div>
-                                <ul class="space-y-1 opacity-90">
-                                    <li>• تصوير أو تحميل ورقة الإجابة</li>
-                                    <li>• تحليل الصورة تلقائياً</li>
-                                    <li>• استخراج الإجابات المختارة</li>
-                                </ul>
-                            </div>
-                            <div class="bg-white bg-opacity-10 rounded-lg p-3">
-                                <div class="font-semibold text-green-200 mb-2">المرحلة الثالثة: التصحيح</div>
-                                <ul class="space-y-1 opacity-90">
-                                    <li>• مراجعة الإجابات المقروءة</li>
-                                    <li>• مقارنة مع الإجابات الصحيحة</li>
-                                    <li>• حساب الدرجة والتقدير</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 bg-yellow-500 bg-opacity-20 rounded-lg p-4 border border-yellow-400 border-opacity-30">
-                        <h4 class="font-semibold mb-2 flex items-center gap-2">
-                            ⚠️ ملاحظة مهمة حول الدقة
-                        </h4>
-                        <p class="text-sm opacity-90">
-                            هذا التطبيق يستخدم محاكاة لعملية قراءة الإجابات لأغراض التوضيح. في التطبيقات الحقيقية، 
-                            تستخدم تقنيات متقدمة مثل التعلم العميق والرؤية الحاسوبية لتحقيق دقة عالية في قراءة الإجابات. 
-                            دقة القراءة تعتمد على جودة الصورة ووضوح العلامات المرسومة.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- مساعد ذكي -->
-            <div id="aiAssistant" class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg p-6 text-white">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-                            🤖
-                        </div>
-                        <div>
-                            <h3 class="text-xl font-bold">المساعد الذكي</h3>
-                            <p class="text-sm opacity-90">نصائح وتوجيهات لتحسين عملية التصحيح</p>
-                        </div>
-                    </div>
-                    <button onclick="toggleAIAssistant()" id="aiToggle"
-                            class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                        عرض النصائح
-                    </button>
-                </div>
-                <div id="aiContent" class="hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white bg-opacity-10 rounded-lg p-4">
-                            <h4 class="font-semibold mb-2">💡 نصائح للتصوير الأمثل</h4>
-                            <ul class="text-sm space-y-1 opacity-90">
-                                <li>• تأكد من الإضاءة الجيدة</li>
-                                <li>• ضع الورقة على سطح مستوٍ</li>
-                                <li>• تجنب الظلال والانعكاسات</li>
-                                <li>• اجعل الورقة تملأ الإطار</li>
-                            </ul>
-                        </div>
-                        <div class="bg-white bg-opacity-10 rounded-lg p-4">
-                            <h4 class="font-semibold mb-2">📊 تحليل الأداء</h4>
-                            <div id="performanceAnalysis" class="text-sm opacity-90">
-                                <p>سيتم عرض تحليل الأداء بعد تصحيح عدة اختبارات</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4 bg-white bg-opacity-10 rounded-lg p-4">
-                        <h4 class="font-semibold mb-2">🎯 توصيات مخصصة</h4>
-                        <div id="customRecommendations" class="text-sm opacity-90">
-                            <p>ابدأ بتصحيح بعض الاختبارات للحصول على توصيات مخصصة لتحسين العملية</p>
-                        </div>
+                <div id="testHistory" class="space-y-3 max-h-64 overflow-y-auto">
+                    <div class="text-center text-gray-500 py-8">
+                        لا توجد اختبارات سابقة
                     </div>
                 </div>
             </div>
         </main>
+
+        <!-- تذييل الصفحة -->
+        <footer class="text-center mt-12 text-gray-600">
+            <p>تم التطوير باستخدام Flask + OpenCV + Render.com</p>
+            <p class="text-sm mt-2">واجهة تجريبية لتطبيق تصحيح الاختبارات الآلي</p>
+        </footer>
     </div>
 
     <script>
-	let isMultipleCorrectionMode = false;
-let multiCorrectionQueue = [];
-let currentMultiIndex = 0;
-let multiCorrectionResults = [];
-	
-        let correctAnswers = [];
-        let studentAnswers = [];
-        let stream = null;
-        let startTime = null;
-        let resultsHistory = JSON.parse(localStorage.getItem('examResults') || '[]');
-        let studentsList = JSON.parse(localStorage.getItem('studentsList') || '[]');
-        let currentStudent = null;
+        // المتغيرات العامة
+        let currentStream = null;
+        let testHistory = JSON.parse(localStorage.getItem('testHistory') || '[]');
+        const API_BASE = window.location.origin;
 
-        // === وظائف أساسية (بدون تغيير) ===
-        function generateAnswerSheet() {
-            const questionCount = parseInt(document.getElementById('questionCount').value);
-            const optionsCount = parseInt(document.getElementById('optionsCount').value);
-            const answersGrid = document.getElementById('answersGrid');
-            const answerSheet = document.getElementById('answerSheet');
+        // تهيئة الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            testConnection();
+            loadTestHistory();
+            setupEventListeners();
+        });
+
+        // إعداد مستمعي الأحداث
+        function setupEventListeners() {
+            // رفع الملف
+            document.getElementById('imageUpload').addEventListener('change', handleFileUpload);
             
+            // السحب والإفلات
+            const dropZone = document.getElementById('dropZone');
+            dropZone.addEventListener('dragover', handleDragOver);
+            dropZone.addEventListener('drop', handleFileDrop);
+            
+            // المعالجة التلقائية
+            document.getElementById('autoProcess').addEventListener('change', function() {
+                if (this.checked && document.getElementById('imagePreviewSection').style.display !== 'none') {
+                    processImage();
+                }
+            });
+        }
+
+        // التعامل مع رفع الملف
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                previewImage(file);
+            }
+        }
+
+        // التعامل مع السحب والإفلات
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.style.borderColor = '#10b981';
+        }
+
+        function handleFileDrop(event) {
+            event.preventDefault();
+            event.currentTarget.style.borderColor = '#d1d5db';
+            const file = event.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                previewImage(file);
+            }
+        }
+
+        // معاينة الصورة
+        function previewImage(file) {
+            if (file.size > 10 * 1024 * 1024) {
+                showNotification('حجم الصورة كبير جداً! الحد الأقصى 10MB', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('imagePreview').src = e.target.result;
+                document.getElementById('imagePreviewSection').classList.remove('hidden');
+                
+                if (document.getElementById('autoProcess').checked) {
+                    processImage();
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // مسح الصورة
+        function clearImage() {
+            document.getElementById('imageUpload').value = '';
+            document.getElementById('imagePreviewSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.add('hidden');
+        }
+
+        // اختبار الاتصال بالخادم
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                
+                document.getElementById('serverStatus').classList.remove('hidden');
+                document.getElementById('statusIcon').className = 'w-8 h-8 rounded-full flex items-center justify-center bg-green-500 text-white';
+                document.getElementById('statusIcon').innerHTML = '✓';
+                document.getElementById('statusText').textContent = 'الخادم يعمل بشكل طبيعي';
+                document.getElementById('statusDetails').textContent = `عدد الإجابات الصحيحة: ${data.answer_key_count}`;
+                document.getElementById('statusTime').textContent = new Date().toLocaleTimeString('ar-SA');
+                
+            } catch (error) {
+                document.getElementById('serverStatus').classList.remove('hidden');
+                document.getElementById('statusIcon').className = 'w-8 h-8 rounded-full flex items-center justify-center bg-red-500 text-white';
+                document.getElementById('statusIcon').innerHTML = '✕';
+                document.getElementById('statusText').textContent = 'لا يمكن الاتصال بالخادم';
+                document.getElementById('statusDetails').textContent = 'تحقق من اتصال الإنترنت';
+                document.getElementById('statusTime').textContent = new Date().toLocaleTimeString('ar-SA');
+            }
+        }
+
+        // تحديث الإجابات الصحيحة
+        async function updateAnswerKey() {
+            const answersText = document.getElementById('correctAnswers').value;
+            const answers = answersText.split(',').map(a => a.trim().toUpperCase());
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/answer_key`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ answers: answers })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showNotification('تم تحديث الإجابات الصحيحة بنجاح!', 'success');
+                    testConnection(); // تحديث حالة الخادم
+                } else {
+                    showNotification('فشل في تحديث الإجابات: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('خطأ في الاتصال بالخادم', 'error');
+            }
+        }
+
+        // معالجة الصورة
+        async function processImage() {
+            const fileInput = document.getElementById('imageUpload');
+            const processBtn = document.getElementById('processBtn');
+            
+            if (!fileInput.files[0]) {
+                showNotification('يرجى اختيار صورة أولاً', 'error');
+                return;
+            }
+
+            // عرض تحميل
+            processBtn.innerHTML = '⏳ جاري المعالجة...';
+            processBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('num_questions', document.getElementById('numQuestions').value);
+            formData.append('options_per_question', document.getElementById('optionsPerQuestion').value);
+            formData.append('debug', document.getElementById('debugMode').checked);
+
+            try {
+                const response = await fetch(`${API_BASE}/api/correct`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayResults(data);
+                    saveToHistory(data);
+                    showNotification('تم تصحيح الورقة بنجاح!', 'success');
+                } else {
+                    showNotification('فشل في المعالجة: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('خطأ في الاتصال بالخادم', 'error');
+            } finally {
+                processBtn.innerHTML = '🔍 بدء التصحيح';
+                processBtn.disabled = false;
+            }
+        }
+
+        // عرض النتائج
+        function displayResults(data) {
+            // عرض قسم النتائج
+            document.getElementById('resultsSection').classList.remove('hidden');
+
+            // تحديث الإحصائيات
+            const statsHtml = `
+                <div class="bg-green-100 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-green-600">${data.correct_count}</div>
+                    <div class="text-sm text-green-800">إجابات صحيحة</div>
+                </div>
+                <div class="bg-red-100 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-red-600">${data.wrong_count}</div>
+                    <div class="text-sm text-red-800">إجابات خاطئة</div>
+                </div>
+                <div class="bg-blue-100 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-blue-600">${data.percentage}%</div>
+                    <div class="text-sm text-blue-800">النسبة المئوية</div>
+                </div>
+                <div class="bg-purple-100 p-4 rounded-lg text-center">
+                    <div class="text-2xl font-bold text-purple-600">${data.bubbles_detected || 0}</div>
+                    <div class="text-sm text-purple-800">فقاعات مكتشفة</div>
+                </div>
+            `;
+            document.getElementById('resultsStats').innerHTML = statsHtml;
+
+            // عرض الإجابات التفصيلية
+            const answersGrid = document.getElementById('answersGrid');
             answersGrid.innerHTML = '';
             
-            const options = optionsCount === 4 ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E'];
-            
-            for (let i = 1; i <= questionCount; i++) {
-                const questionDiv = document.createElement('div');
-                questionDiv.className = 'bg-gray-50 p-3 rounded-lg';
-                questionDiv.innerHTML = `
-                    <label class="block text-sm font-medium text-gray-700 mb-2">السؤال ${i}:</label>
-                    <select id="answer${i}" class="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        <option value="">اختر الإجابة</option>
-                        ${options.map(opt => `<option value="${opt}" ${opt === 'A' ? 'selected' : ''}>${opt}</option>`).join('')}
-                    </select>
+            data.answers.forEach((answer, index) => {
+                const correctAnswer = data.answers.length > index ? data.answers[index] : '?';
+                const isCorrect = answer === correctAnswer && answer !== 'فراغ';
+                const isEmpty = answer === 'فراغ';
+                
+                let bgClass = 'wrong-answer';
+                if (isCorrect) bgClass = 'correct-answer';
+                if (isEmpty) bgClass = 'empty-answer';
+                
+                const answerDiv = document.createElement('div');
+                answerDiv.className = `p-3 rounded-lg text-white text-center font-medium ${bgClass}`;
+                answerDiv.innerHTML = `
+                    <div class="text-sm">س${index + 1}</div>
+                    <div class="text-lg">${answer}</div>
+                    <div class="text-xs">${isCorrect ? '✓' : isEmpty ? '∅' : '✗'}</div>
                 `;
-                answersGrid.appendChild(questionDiv);
-            }
-            
-            answerSheet.classList.remove('hidden');
-        }
+                answersGrid.appendChild(answerDiv);
+            });
 
-        function saveCorrectAnswers() {
-            const questionCount = parseInt(document.getElementById('questionCount').value);
-            correctAnswers = [];
-            
-            for (let i = 1; i <= questionCount; i++) {
-                const answer = document.getElementById(`answer${i}`).value;
-                if (!answer) {
-                    showNotification(`يرجى اختيار إجابة للسؤال ${i}`, 'error');
-                    return;
+            // عرض صورة التصحيح إذا كانت متوفرة
+            if (data.debug_image) {
+                document.getElementById('debugSection').classList.remove('hidden');
+                document.getElementById('debugImage').src = data.debug_image;
+            } else {
+                document.getElementById('debugSection').classList.add('hidden');
+            }
+
+            // عرض معلومات إضافية
+            if (data.bubbles_detected !== undefined || data.perspective_corrected !== undefined) {
+                document.getElementById('additionalInfo').classList.remove('hidden');
+                let infoHtml = '';
+                if (data.bubbles_detected !== undefined) {
+                    infoHtml += `<div>🔍 الفقاعات المكتشفة: ${data.bubbles_detected}</div>`;
                 }
-                correctAnswers.push(answer);
+                if (data.perspective_corrected !== undefined) {
+                    infoHtml += `<div>📐 تصحيح المنظور: ${data.perspective_corrected ? 'نعم' : 'لا'}</div>`;
+                }
+                document.getElementById('analysisInfo').innerHTML = infoHtml;
             }
-            
-            document.getElementById('studentInfoSection').classList.remove('hidden');
-            showNotification('تم حفظ الإجابات الصحيحة بنجاح! يمكنك الآن إدخال بيانات الطالب وتصوير ورقة الإجابة.', 'success');
         }
 
+        // الكاميرا
         async function startCamera() {
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
-                        facingMode: 'environment',
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
+                currentStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'environment' } 
                 });
                 
                 const video = document.getElementById('camera');
-                video.srcObject = stream;
+                video.srcObject = currentStream;
                 
-                document.getElementById('startBtn').disabled = true;
+                document.getElementById('startCameraBtn').disabled = true;
                 document.getElementById('captureBtn').disabled = false;
-                document.getElementById('captureBtn').className = 'bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2';
-                document.getElementById('stopBtn').disabled = false;
-                document.getElementById('stopBtn').className = 'bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2';
+                document.getElementById('stopCameraBtn').disabled = false;
                 
             } catch (error) {
-                showNotification('لا يمكن الوصول إلى الكاميرا. يرجى التأكد من السماح بالوصول للكاميرا.', 'error');
+                showNotification('لا يمكن الوصول إلى الكاميرا', 'error');
             }
         }
 
-        function captureImage() {
+        function stopCamera() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+                currentStream = null;
+            }
+            
+            document.getElementById('startCameraBtn').disabled = false;
+            document.getElementById('captureBtn').disabled = true;
+            document.getElementById('stopCameraBtn').disabled = true;
+        }
+
+        function captureFromCamera() {
             const video = document.getElementById('camera');
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
             
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            
             ctx.drawImage(video, 0, 0);
             
-            const imageData = canvas.toDataURL('image/jpeg', 0.8);
-            const capturedImage = document.getElementById('capturedImage');
-            capturedImage.src = imageData;
-            
-            document.getElementById('capturedSection').classList.remove('hidden');
-            showNotification('تم التقاط الصورة بنجاح! يمكنك الآن تحليل الإجابات.', 'success');
+            // تحويل إلى ملف
+            canvas.toBlob(function(blob) {
+                const file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+                
+                // محاكاة رفع الملف
+                const fileInput = document.getElementById('imageUpload');
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                
+                // معاينة الصورة
+                previewImage(file);
+                
+                // إيقاف الكاميرا
+                stopCamera();
+            }, 'image/jpeg', 0.8);
         }
 
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-                stream = null;
+        // إدارة السجل
+        function saveToHistory(data) {
+            const testRecord = {
+                id: Date.now(),
+                timestamp: new Date().toLocaleString('ar-SA'),
+                correct_count: data.correct_count,
+                wrong_count: data.wrong_count,
+                percentage: data.percentage,
+                total_questions: data.total_questions
+            };
+            
+            testHistory.unshift(testRecord);
+            if (testHistory.length > 10) {
+                testHistory = testHistory.slice(0, 10);
             }
             
-            document.getElementById('startBtn').disabled = false;
-            document.getElementById('captureBtn').disabled = true;
-            document.getElementById('captureBtn').className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:cursor-not-allowed';
-            document.getElementById('stopBtn').disabled = true;
-            document.getElementById('stopBtn').className = 'bg-gray-400 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 disabled:cursor-not-allowed';
+            localStorage.setItem('testHistory', JSON.stringify(testHistory));
+            loadTestHistory();
         }
 
+        function loadTestHistory() {
+            const historyContainer = document.getElementById('testHistory');
+            
+            if (testHistory.length === 0) {
+                historyContainer.innerHTML = '<div class="text-center text-gray-500 py-8">لا توجد اختبارات سابقة</div>';
+                return;
+            }
+            
+            historyContainer.innerHTML = testHistory.map(record => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div>
+                        <div class="font-semibold text-gray-800">اختبار ${record.id.toString().slice(-4)}</div>
+                        <div class="text-sm text-gray-600">${record.timestamp}</div>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-lg font-bold text-blue-600">${record.percentage}%</div>
+                        <div class="text-sm text-gray-600">${record.correct_count}/${record.total_questions}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
 
+        function clearHistory() {
+            if (confirm('هل تريد مسح سجل الاختبارات؟')) {
+                testHistory = [];
+                localStorage.removeItem('testHistory');
+                loadTestHistory();
+                showNotification('تم مسح السجل', 'success');
+            }
+        }
+
+        // أدوات مساعدة
         function showNotification(message, type = 'info') {
             const notification = document.createElement('div');
             notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded-lg text-white font-medium z-50 transition-all duration-300 ${
                 type === 'success' ? 'bg-green-600' :
                 type === 'error' ? 'bg-red-600' :
-                type === 'info' ? 'bg-blue-600' : 'bg-gray-600'
+                'bg-blue-600'
             }`;
             notification.textContent = message;
             
@@ -936,1640 +657,38 @@ let multiCorrectionResults = [];
             setTimeout(() => {
                 notification.style.opacity = '0';
                 notification.style.transform = 'translate(-50%, -100%)';
-                setTimeout(() => document.body.removeChild(notification), 300);
-            }, 3000);
-        }
-		
-        function resetApp() {
-            document.getElementById('capturedSection').classList.add('hidden');
-            document.getElementById('verificationSection').classList.add('hidden');
-            document.getElementById('resultsSection').classList.add('hidden');
-            document.getElementById('studentInfoSection').classList.add('hidden');
-            document.getElementById('studentResultInfo').classList.add('hidden');
-            
-            // إعادة تعيين النماذج
-            document.getElementById('studentName').value = '';
-            document.getElementById('studentClass').value = '';
-            document.getElementById('examName').value = '';
-            document.getElementById('examDate').value = '';
-            
-            studentAnswers = [];
-            startTime = null;
-            
-            // تحديث قائمة الطلاب لإظهار الطلاب غير المصححين
-            updateStudentNameDropdown();
-            
-            showNotification('تم إعادة تعيين التطبيق. يمكنك البدء بتصحيح ورقة جديدة!', 'info');
+                setTimeout(() => notification.remove(), 300);
+            }, 4000);
         }
 
-        function displayResults() {
-            let correctCount = 0;
-            let wrongCount = 0;
-            let emptyCount = 0;
-            
-            const detailedResults = document.getElementById('detailedResults');
-            detailedResults.innerHTML = '';
-            
-            for (let i = 0; i < correctAnswers.length; i++) {
-                const studentAnswer = studentAnswers[i];
-                const correctAnswer = correctAnswers[i];
-                const isEmpty = studentAnswer === 'فراغ';
-                const isCorrect = studentAnswer === correctAnswer;
-                
-                if (isEmpty) {
-                    emptyCount++;
-                    wrongCount++; // الإجابة الفارغة تُحسب كإجابة خاطئة
-                } else if (isCorrect) {
-                    correctCount++;
-                } else {
-                    wrongCount++;
-                }
-                
-                const resultDiv = document.createElement('div');
-                
-                // تحديد لون وشكل النتيجة
-                let resultClass, displayAnswer, statusIcon;
-                
-                if (isEmpty) {
-                    resultClass = 'bg-gradient-to-r from-orange-500 to-orange-600';
-                    displayAnswer = '∅';
-                    statusIcon = '⚠️ ' + correctAnswer;
-                } else if (isCorrect) {
-                    resultClass = 'correct-answer';
-                    displayAnswer = studentAnswer;
-                    statusIcon = '✓';
-                } else {
-                    resultClass = 'wrong-answer';
-                    displayAnswer = studentAnswer;
-                    statusIcon = '✗ ' + correctAnswer;
-                }
-                
-                resultDiv.className = `p-3 rounded-lg text-white text-center font-medium ${resultClass}`;
-                resultDiv.innerHTML = `
-                    <div class="text-sm">س${i + 1}</div>
-                    <div class="text-lg">${displayAnswer}</div>
-                    <div class="text-xs">${statusIcon}</div>
-                `;
-                detailedResults.appendChild(resultDiv);
-            }
-            
-            const percentage = Math.round((correctCount / correctAnswers.length) * 100);
-            const letterGrade = getLetterGrade(percentage);
-            const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
-            
-            // تحديث النتائج الأساسية
-            document.getElementById('correctCount').textContent = correctCount;
-            document.getElementById('wrongCount').textContent = wrongCount;
-            document.getElementById('scorePercentage').textContent = percentage + '%';
-            document.getElementById('letterGrade').textContent = letterGrade;
-            
-            // تحديث الإحصائيات الإضافية
-            document.getElementById('timeSpent').textContent = processingTime + 'ث';
-            document.getElementById('accuracy').textContent = '95%';
-            document.getElementById('difficulty').textContent = getDifficultyLevel(percentage);
-            
-            // تحديث بيانات الطالب في النتائج
-            updateStudentResultInfo();
-            
-            // تحديث الرسم البياني
-            updateChart(correctCount, wrongCount);
-            
-            // إضافة إحصائية الإجابات الفارغة إذا وُجدت
-            if (emptyCount > 0) {
-                addEmptyAnswersStats(emptyCount);
-            }
-            
-            document.getElementById('resultsSection').classList.remove('hidden');
-            
-            let message = 'تم تحليل الإجابات بنجاح!';
-            if (emptyCount > 0) {
-                message += ` تم العثور على ${emptyCount} إجابة فارغة.`;
-            }
-            showNotification(message, 'success');
-        }
-        function getLetterGrade(percentage) {
-            if (percentage >= 90) return 'ممتاز';
-            if (percentage >= 80) return 'جيد جداً';
-            if (percentage >= 70) return 'جيد';
-            if (percentage >= 60) return 'مقبول';
-            return 'راسب';
-        }
-		// تحديد مستوى الصعوبة
-function getDifficultyLevel(percentage) {
-    if (percentage >= 90) return 'سهل';
-    if (percentage >= 70) return 'متوسط';
-    if (percentage >= 50) return 'صعب';
-    return 'صعب جداً';
-}
-
-        function addEmptyAnswersStats(emptyCount) {
-            // البحث عن مكان إضافة إحصائية الإجابات الفارغة
-            const statsContainer = document.querySelector('#resultsSection .grid');
-            
-            // إنشاء عنصر إحصائية الإجابات الفارغة
-            const emptyStatsDiv = document.createElement('div');
-            emptyStatsDiv.className = 'bg-gradient-to-r from-orange-500 to-orange-600 text-white p-4 rounded-lg text-center';
-            emptyStatsDiv.innerHTML = `
-                <div class="text-3xl font-bold">${emptyCount}</div>
-                <div class="text-sm">إجابات فارغة</div>
-            `;
-            
-            // إضافة العنصر للشبكة
-            if (statsContainer) {
-                statsContainer.appendChild(emptyStatsDiv);
-                
-                // تحديث تخطيط الشبكة لتتسع للعنصر الجديد
-                statsContainer.className = statsContainer.className.replace('grid-cols-1 md:grid-cols-4', 'grid-cols-1 md:grid-cols-5');
-            }
-        }
-
-
-        function updateStudentClass() {
-            const studentSelect = document.getElementById('studentName');
-            const studentClassInput = document.getElementById('studentClass');
-            
-            if (studentSelect.value) {
-                const selectedStudent = studentsList.find(s => s.name === studentSelect.value);
-                if (selectedStudent) {
-                    studentClassInput.value = selectedStudent.class;
-                }
-            } else {
-                studentClassInput.value = '';
-            }
-        }
-        function updateStudentResultInfo() {
-            const studentName = document.getElementById('studentName').value;
-            const studentClass = document.getElementById('studentClass').value;
-            const examName = document.getElementById('examName').value;
-            const examDate = document.getElementById('examDate').value;
-            
-            if (studentName || studentClass || examName || examDate) {
-                document.getElementById('resultStudentName').textContent = studentName || '-';
-                document.getElementById('resultStudentClass').textContent = studentClass || '-';
-                document.getElementById('resultExamName').textContent = examName || '-';
-                document.getElementById('resultExamDate').textContent = examDate || '-';
-                document.getElementById('studentResultInfo').classList.remove('hidden');
-            }
-        }
-        function updateChart(correct, wrong) {
-            const total = correct + wrong;
-            const correctPercentage = (correct / total) * 100;
-            const wrongPercentage = (wrong / total) * 100;
-            
-            setTimeout(() => {
-                document.getElementById('correctBar').style.height = correctPercentage + '%';
-                document.getElementById('wrongBar').style.height = wrongPercentage + '%';
-            }, 500);
-        }
-        function exportResults() {
-            const studentName = document.getElementById('studentName').value || 'غير محدد';
-            const studentId = document.getElementById('studentId').value || 'غير محدد';
-            const examName = document.getElementById('examName').value || 'غير محدد';
-            const examDate = document.getElementById('examDate').value || new Date().toLocaleDateString('ar-SA');
-            
-            const correctCount = parseInt(document.getElementById('correctCount').textContent);
-            const wrongCount = parseInt(document.getElementById('wrongCount').textContent);
-            const percentage = document.getElementById('scorePercentage').textContent;
-            const grade = document.getElementById('letterGrade').textContent;
-            
-            const reportContent = `
-تقرير نتائج الاختبار
-====================
-
-بيانات الطالب:
-- الاسم: ${studentName}
-- رقم الطالب: ${studentId}
-- اسم الاختبار: ${examName}
-- تاريخ الاختبار: ${examDate}
-
-النتائج:
-- الإجابات الصحيحة: ${correctCount}
-- الإجابات الخاطئة: ${wrongCount}
-- النسبة المئوية: ${percentage}
-- التقدير: ${grade}
-
-تفاصيل الإجابات:
-${correctAnswers.map((correct, i) => 
-    `السؤال ${i + 1}: ${studentAnswers[i]} ${studentAnswers[i] === correct ? '✓' : '✗ (الصحيحة: ' + correct + ')'}`
-).join('\n')}
-
-تم إنشاء التقرير في: ${new Date().toLocaleString('ar-SA')}
-            `;
-            
-            const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
+        function downloadResults() {
+            const results = document.getElementById('resultsSection').innerText;
+            const blob = new Blob([results], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `نتيجة_${studentName}_${examName}.txt`;
+            a.download = `نتيجة_التصحيح_${new Date().toLocaleDateString('ar-SA')}.txt`;
             a.click();
             URL.revokeObjectURL(url);
-            
-            showNotification('تم تصدير النتائج بنجاح!', 'success');
         }
 
-        function saveToHistory() {
-            const studentName = document.getElementById('studentName').value || 'غير محدد';
-            const studentClass = document.getElementById('studentClass').value || 'غير محدد';
-            const examName = document.getElementById('examName').value || 'غير محدد';
-            const examDate = document.getElementById('examDate').value || new Date().toLocaleDateString('ar-SA');
-            
-            const result = {
-                id: Date.now(),
-                studentName,
-                studentClass,
-                examName,
-                examDate,
-                correctCount: parseInt(document.getElementById('correctCount').textContent),
-                wrongCount: parseInt(document.getElementById('wrongCount').textContent),
-                percentage: document.getElementById('scorePercentage').textContent,
-                grade: document.getElementById('letterGrade').textContent,
-                timestamp: new Date().toLocaleString('ar-SA')
-            };
-            
-            resultsHistory.unshift(result);
-            localStorage.setItem('examResults', JSON.stringify(resultsHistory));
-            updateHistoryDisplay();
-            
-            // تحديث حالة الطالب في قائمة الطلاب
-            updateStudentCorrectionStatus(result);
-            
-            // إذا كان في وضع التصحيح المتعدد، انتقل للطالب التالي
-            if (isMultipleCorrectionMode) {
-                handleMultiCorrectionNext(result);
-            }
-            
-            showNotification('تم حفظ النتيجة في السجل بنجاح!', 'success');
-        }
-		        function updateStudentCorrectionStatus(result) {
-            // البحث عن الطالب في القائمة وتحديث حالته
-            const student = studentsList.find(s => 
-                s.name === result.studentName && s.class === result.studentClass
-            );
-            
-            if (student) {
-                student.corrected = true;
-                student.result = {
-                    correctCount: result.correctCount,
-                    wrongCount: result.wrongCount,
-                    percentage: result.percentage,
-                    grade: result.grade
-                };
-                student.timestamp = result.timestamp;
-                
-                localStorage.setItem('studentsList', JSON.stringify(studentsList));
-                displayStudentsList();
+        function shareResults() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'نتيجة تصحيح الاختبار',
+                    text: `تم تصحيح الاختبار بنسبة ${document.querySelector('#resultsStats .bg-blue-100 .text-3xl').textContent} نجاح`,
+                    url: window.location.href
+                });
+            } else {
+                showNotification('مشاركة النتائج غير متاحة في هذا المتصفح', 'info');
             }
         }
 
-        function handleMultiCorrectionNext(result) {
-            // إضافة النتيجة لتقرير التصحيح المتعدد
-            multiCorrectionResults.push({
-                student: multiCorrectionQueue[currentMultiIndex],
-                status: 'completed',
-                result: {
-                    correctCount: result.correctCount,
-                    wrongCount: result.wrongCount,
-                    percentage: result.percentage,
-                    grade: result.grade
-                }
-            });
-            
-            // الانتقال للطالب التالي
-            currentMultiIndex++;
-            
-            // إخفاء النتائج الحالية
+        function resetTest() {
+            clearImage();
             document.getElementById('resultsSection').classList.add('hidden');
-            document.getElementById('capturedSection').classList.add('hidden');
-            document.getElementById('verificationSection').classList.add('hidden');
-            
-            // إعادة تعيين البيانات للطالب التالي
-            studentAnswers = [];
-            
-            if (currentMultiIndex < multiCorrectionQueue.length) {
-                // عرض الطالب التالي
-                showCurrentMultiStudent();
-                showNotification(`تم حفظ نتيجة ${result.studentName}. انتقل للطالب التالي.`, 'success');
-            } else {
-                // إكمال التصحيح المتعدد
-                completeMultipleCorrection();
-            }
+            showNotification('تم إعداد اختبار جديد', 'info');
         }
-
-		
-		
-		
-        function toggleHistory() {
-            const historyContent = document.getElementById('historyContent');
-            const toggleBtn = document.getElementById('historyToggle');
-            
-            if (historyContent.classList.contains('hidden')) {
-                historyContent.classList.remove('hidden');
-                toggleBtn.textContent = 'إخفاء السجل';
-                updateHistoryDisplay();
-            } else {
-                historyContent.classList.add('hidden');
-                toggleBtn.textContent = 'عرض السجل';
-            }
-        }
-		
-function updateHistoryDisplay() {
-    const historyList = document.getElementById('historyList');
-    
-    if (resultsHistory.length === 0) {
-        historyList.innerHTML = '<div class="text-center text-gray-500 py-8">لا توجد نتائج محفوظة بعد</div>';
-        return;
-    }
-    
-    historyList.innerHTML = resultsHistory.map(result => `
-        <div class="bg-gray-50 rounded-lg p-4 border-r-4 border-blue-500">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <h4 class="font-semibold text-gray-800">${result.studentName}</h4>
-                    <p class="text-sm text-gray-600">${result.examName}</p>
-                </div>
-                <div class="text-left">
-                    <div class="text-lg font-bold text-blue-600">${result.percentage}</div>
-                    <div class="text-sm text-gray-600">${result.grade}</div>
-                </div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-500">
-                <span>رقم الطالب: ${result.studentId}</span>
-                <span>${result.timestamp}</span>
-            </div>
-        </div>
-    `).join('');
-    
-    updateQuickStats();
-}
-
-function clearHistory() {
-    if (resultsHistory.length === 0) {
-        showNotification('السجل فارغ بالفعل!', 'info');
-        return;
-    }
-    
-    resultsHistory = [];
-    localStorage.removeItem('examResults');
-    updateHistoryDisplay();
-    showNotification('تم مسح السجل بنجاح!', 'success');
-}
-
-function showAnswerVerification() {
-    const verificationGrid = document.getElementById('verificationGrid');
-    const optionsCount = parseInt(document.getElementById('optionsCount').value);
-    const options = optionsCount === 4 ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E'];
-    verificationGrid.innerHTML = '';
-
-    for (let i = 0; i < correctAnswers.length; i++) {
-        const questionDiv = document.createElement('div');
-        const isEmptyAnswer = studentAnswers[i] === 'فراغ';
-        const answerDisplay = isEmptyAnswer ? 
-            '<div class="text-2xl font-bold text-orange-600 bg-orange-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto shadow-md border-2 border-dashed border-orange-400">∅</div>' :
-            `<div class="text-2xl font-bold text-blue-600 bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center mx-auto shadow-md">${studentAnswers[i]}</div>`;
-
-        questionDiv.className = `p-4 rounded-lg border-2 ${isEmptyAnswer ? 'border-orange-300 bg-orange-50' : 'border-blue-300 bg-blue-50'}`;
-        questionDiv.innerHTML = `
-            <div class="text-center mb-3">
-                <div class="text-sm font-medium text-gray-700">السؤال ${i + 1}</div>
-            </div>
-            <div class="text-center mb-3">
-                ${answerDisplay}
-                ${isEmptyAnswer ? '<div class="text-xs text-orange-600 mt-1">لم يتم اكتشاف إجابة</div>' : ''}
-            </div>
-            <select id="verify${i}" class="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="فراغ" ${isEmptyAnswer ? 'selected' : ''}>فراغ (لا توجد إجابة)</option>
-                ${options.map(opt => `<option value="${opt}" ${opt === studentAnswers[i] ? 'selected' : ''}>${opt}</option>`).join('')}
-            </select>
-        `;
-        verificationGrid.appendChild(questionDiv);
-    }
-
-    document.getElementById('verificationSection').classList.remove('hidden');
-    showNotification('تم استلام الإجابات من الخادم. يرجى مراجعتها والتأكد من صحتها.', 'success');
-}
-
-
-
-function confirmAnswers() {
-    for (let i = 0; i < correctAnswers.length; i++) {
-        const verifySelect = document.getElementById(`verify${i}`);
-        if (verifySelect) {
-            studentAnswers[i] = verifySelect.value;
-        }
-    }
-    
-    document.getElementById('verificationSection').classList.add('hidden');
-    displayResults();
-    showNotification('تم تأكيد الإجابات وحساب النتائج!', 'success');
-}
-
-
-function manualEntry() {
-    const verificationGrid = document.getElementById('verificationGrid');
-    const optionsCount = parseInt(document.getElementById('optionsCount').value);
-    const options = optionsCount === 4 ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E'];
-    
-    verificationGrid.innerHTML = '';
-    
-    for (let i = 0; i < correctAnswers.length; i++) {
-        const questionDiv = document.createElement('div');
-        questionDiv.className = 'bg-blue-50 p-4 rounded-lg border-2 border-blue-300';
-        questionDiv.innerHTML = `
-            <div class="text-center mb-3">
-                <div class="text-sm font-medium text-gray-700">السؤال ${i + 1}</div>
-                <div class="text-xs text-blue-600">إدخال يدوي</div>
-            </div>
-            <select id="verify${i}" class="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="">اختر الإجابة</option>
-                <option value="فراغ">فراغ (لا توجد إجابة)</option>
-                ${options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
-            </select>
-        `;
-        verificationGrid.appendChild(questionDiv);
-    }
-    
-    showNotification('يمكنك الآن إدخال إجابات الطالب يدوياً لكل سؤال. اختر "فراغ" إذا لم يجب الطالب على السؤال.', 'info');
-}
-
-function exportAllResults() {
-    if (resultsHistory.length === 0) {
-        showNotification('لا توجد نتائج لتصديرها!', 'error');
-        return;
-    }
-    
-    const csvContent = 'اسم الطالب,رقم الطالب,اسم الاختبار,تاريخ الاختبار,الإجابات الصحيحة,الإجابات الخاطئة,النسبة المئوية,التقدير,تاريخ التصحيح\n' +
-        resultsHistory.map(result => 
-            `"${result.studentName}","${result.studentId}","${result.examName}","${result.examDate}",${result.correctCount},${result.wrongCount},"${result.percentage}","${result.grade}","${result.timestamp}"`
-        ).join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `جميع_نتائج_الاختبارات_${new Date().toLocaleDateString('ar-SA')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showNotification('تم تصدير جميع النتائج بنجاح!', 'success');
-}
-
-function filterHistory() {
-    const searchTerm = document.getElementById('searchStudent').value.toLowerCase();
-    const examFilter = document.getElementById('filterExam').value;
-    const sortBy = document.getElementById('sortBy').value;
-    
-    let filteredResults = [...resultsHistory];
-    
-    if (searchTerm) {
-        filteredResults = filteredResults.filter(result => 
-            result.studentName.toLowerCase().includes(searchTerm)
-        );
-    }
-    
-    if (examFilter) {
-        filteredResults = filteredResults.filter(result => 
-            result.examName === examFilter
-        );
-    }
-    
-    filteredResults.sort((a, b) => {
-        switch (sortBy) {
-            case 'oldest':
-                return a.id - b.id;
-            case 'highest':
-                return parseInt(b.percentage) - parseInt(a.percentage);
-            case 'lowest':
-                return parseInt(a.percentage) - parseInt(b.percentage);
-            case 'name':
-                return a.studentName.localeCompare(b.studentName, 'ar');
-            default:
-                return b.id - a.id;
-        }
-    });
-    
-    displayFilteredHistory(filteredResults);
-}
-
-function displayFilteredHistory(results) {
-    const historyList = document.getElementById('historyList');
-    
-    if (results.length === 0) {
-        historyList.innerHTML = '<div class="text-center text-gray-500 py-8">لا توجد نتائج تطابق البحث</div>';
-        return;
-    }
-    
-    historyList.innerHTML = results.map(result => `
-        <div class="bg-gray-50 rounded-lg p-4 border-r-4 border-blue-500">
-            <div class="flex justify-between items-start mb-2">
-                <div>
-                    <h4 class="font-semibold text-gray-800">${result.studentName}</h4>
-                    <p class="text-sm text-gray-600">${result.examName}</p>
-                </div>
-                <div class="text-left">
-                    <div class="text-lg font-bold text-blue-600">${result.percentage}</div>
-                    <div class="text-sm text-gray-600">${result.grade}</div>
-                </div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-500">
-                <span>رقم الطالب: ${result.studentId}</span>
-                <span>${result.timestamp}</span>
-            </div>
-        </div>
-    `).join('');
-}
-
-function updateQuickStats() {
-    if (resultsHistory.length === 0) return;
-    
-    const totalExams = resultsHistory.length;
-    const avgScore = Math.round(resultsHistory.reduce((sum, result) => sum + parseInt(result.percentage), 0) / totalExams);
-    const topScore = Math.max(...resultsHistory.map(result => parseInt(result.percentage)));
-    const uniqueStudents = new Set(resultsHistory.map(result => result.studentName)).size;
-    
-    document.getElementById('totalExams').textContent = totalExams;
-    document.getElementById('avgScore').textContent = avgScore + '%';
-    document.getElementById('topScore').textContent = topScore + '%';
-    document.getElementById('uniqueStudents').textContent = uniqueStudents;
-    
-    const examFilter = document.getElementById('filterExam');
-    const uniqueExams = [...new Set(resultsHistory.map(result => result.examName))];
-    examFilter.innerHTML = '<option value="">جميع الاختبارات</option>' +
-        uniqueExams.map(exam => `<option value="${exam}">${exam}</option>`).join('');
-}
-
-function toggleAdvancedSettings() {
-    const advancedContent = document.getElementById('advancedContent');
-    const toggleBtn = document.getElementById('advancedToggle');
-    
-    if (advancedContent.classList.contains('hidden')) {
-        advancedContent.classList.remove('hidden');
-        toggleBtn.textContent = 'إخفاء الإعدادات';
-    } else {
-        advancedContent.classList.add('hidden');
-        toggleBtn.textContent = 'عرض الإعدادات';
-    }
-}
-
-function toggleHowItWorks() {
-    const howItWorksContent = document.getElementById('howItWorksContent');
-    const toggleBtn = document.getElementById('howItWorksToggle');
-    
-    if (howItWorksContent.classList.contains('hidden')) {
-        howItWorksContent.classList.remove('hidden');
-        toggleBtn.textContent = 'إخفاء الشرح';
-    } else {
-        howItWorksContent.classList.add('hidden');
-        toggleBtn.textContent = 'عرض الشرح';
-    }
-}
-
-function toggleAIAssistant() {
-    const aiContent = document.getElementById('aiContent');
-    const toggleBtn = document.getElementById('aiToggle');
-    
-    if (aiContent.classList.contains('hidden')) {
-        aiContent.classList.remove('hidden');
-        toggleBtn.textContent = 'إخفاء النصائح';
-        updateAIRecommendations();
-    } else {
-        aiContent.classList.add('hidden');
-        toggleBtn.textContent = 'عرض النصائح';
-    }
-}
-
-function updateAIRecommendations() {
-    if (resultsHistory.length === 0) return;
-    
-    const avgScore = resultsHistory.reduce((sum, result) => sum + parseInt(result.percentage), 0) / resultsHistory.length;
-    const recentResults = resultsHistory.slice(0, 5);
-    
-    let performanceAnalysis = '';
-    let recommendations = '';
-    
-    if (avgScore >= 80) {
-        performanceAnalysis = `أداء ممتاز! متوسط الدرجات ${Math.round(avgScore)}%. الطلاب يحققون نتائج جيدة.`;
-        recommendations = 'يمكنك زيادة مستوى صعوبة الأسئلة لتحدي الطلاب أكثر.';
-    } else if (avgScore >= 60) {
-        performanceAnalysis = `أداء جيد. متوسط الدرجات ${Math.round(avgScore)}%. هناك مجال للتحسن.`;
-        recommendations = 'راجع الأسئلة التي يخطئ فيها الطلاب كثيراً وركز عليها في التدريس.';
-    } else {
-        performanceAnalysis = `يحتاج الأداء للتحسن. متوسط الدرجات ${Math.round(avgScore)}%.`;
-        recommendations = 'قد تحتاج لمراجعة طريقة التدريس أو تبسيط الأسئلة.';
-    }
-    
-    document.getElementById('performanceAnalysis').innerHTML = performanceAnalysis;
-    document.getElementById('customRecommendations').innerHTML = recommendations;
-}
-
-function generateQRCode() {
-    const examName = document.getElementById('examName').value || 'اختبار جديد';
-    const questionCount = document.getElementById('questionCount').value;
-    
-    const qrData = {
-        examName: examName,
-        questionCount: questionCount,
-        correctAnswers: correctAnswers,
-        timestamp: new Date().toISOString()
-    };
-    
-    const qrContent = `
-        <div class="text-center p-6">
-            <div class="w-48 h-48 bg-gray-200 mx-auto mb-4 flex items-center justify-center rounded-lg">
-                <div class="text-6xl">📱</div>
-            </div>
-            <h3 class="text-lg font-semibold mb-2">رمز QR للاختبار</h3>
-            <p class="text-sm text-gray-600 mb-4">${examName}</p>
-            <p class="text-xs text-gray-500">يمكن للطلاب مسح هذا الرمز للوصول لمعلومات الاختبار</p>
-        </div>
-    `;
-    
-    showModal('رمز QR للاختبار', qrContent);
-}
-
-function printAnswerSheet() {
-    const questionCount = parseInt(document.getElementById('questionCount').value) || 10;
-    const optionsCount = parseInt(document.getElementById('optionsCount').value) || 4;
-    const examName = document.getElementById('examName').value || 'اختبار';
-    const options = optionsCount === 4 ? ['A', 'B', 'C', 'D'] : ['A', 'B', 'C', 'D', 'E'];
-
-    let printContent = `
-        <!DOCTYPE html>
-        <html dir="rtl">
-        <head>
-            <meta charset="UTF-8">
-            <title>نموذج إجابة الطالب</title>
-            <style>
-                body {
-                    font-family: 'Arial', sans-serif;
-                    margin: 20px;
-                    direction: rtl;
-                    background: white;
-                    color: black;
-                }
-                .header {
-                    text-align: center;
-                    margin-bottom: 30px;
-                    border-bottom: 2px solid #000;
-                    padding-bottom: 15px;
-                }
-                .info-row {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 15px;
-                    gap: 20px;
-                }
-                .info-field {
-                    flex: 1;
-                }
-                .info-field label {
-                    display: block;
-                    font-weight: bold;
-                    margin-bottom: 5px;
-                }
-                .info-field input {
-                    width: 100%;
-                    padding: 6px;
-                    border: 1px solid #000;
-                    border-radius: 4px;
-                    font-size: 14px;
-                }
-                .questions-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, 1fr);
-                    gap: 25px;
-                }
-                .question {
-                    margin-bottom: 20px;
-                    padding: 10px;
-                    border: 1px solid #ccc;
-                    border-radius: 8px;
-                }
-                .question-header {
-                    font-weight: bold;
-                    margin-bottom: 10px;
-                    font-size: 16px;
-                }
-                .options {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 15px;
-                }
-                .option {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                .bubble {
-                    width: 24px;
-                    height: 24px;
-                    border: 2px solid #000;
-                    border-radius: 50%;
-                    display: inline-block;
-                }
-                @media print {
-                    body { margin: 0; }
-                    .no-print { display: none !important; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <h1 style="font-size: 24px; margin: 0;">${examName}</h1>
-                <p>نموذج إجابة الطالب</p>
-            </div>
-
-            <div class="info-row">
-                <div class="info-field">
-                    <label>اسم الطالب:</label>
-                    <input type="text" readonly>
-                </div>
-                <div class="info-field">
-                    <label>رقم الطالب:</label>
-                    <input type="text" readonly>
-                </div>
-                <div class="info-field">
-                    <label>الفصل:</label>
-                    <input type="text" readonly>
-                </div>
-                <div class="info-field">
-                    <label>التاريخ:</label>
-                    <input type="text" readonly>
-                </div>
-            </div>
-
-            <div class="questions-grid">
-    `;
-
-    for (let i = 1; i <= questionCount; i++) {
-        printContent += `
-            <div class="question">
-                <div class="question-header">السؤال ${i}:</div>
-                <div class="options">
-                    ${options.map(opt => `
-                        <div class="option">
-                            <span class="bubble"></span>
-                            <span>${opt}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    printContent += `
-            </div>
-
-            <div class="no-print" style="text-align: center; margin-top: 30px;">
-                <button onclick="window.print()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">
-                    🖨️ طباعة النموذج
-                </button>
-            </div>
-    `;
-
-    const printWindow = window.open('', '_blank', 'width=800,height=900');
-    printWindow.document.write(printContent);
-    printWindow.document.close();
-    printWindow.focus();
-
-    showNotification('تم فتح نموذج الإجابة! اضغط على زر "طباعة" في النافذة الجديدة.', 'success');
-}
-
-function importAnswers() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.txt,.csv';
-    input.onchange = function(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const content = e.target.result;
-                    const lines = content.split('\n');
-                    const answers = lines[0].split(',').map(a => a.trim());
-                    
-                    if (answers.length > 0 && answers.every(a => ['A', 'B', 'C', 'D', 'E'].includes(a))) {
-                        correctAnswers = answers;
-                        document.getElementById('questionCount').value = answers.length;
-                        generateAnswerSheet();
-                        
-                        answers.forEach((answer, index) => {
-                            const select = document.getElementById(`answer${index + 1}`);
-                            if (select) select.value = answer;
-                        });
-                        
-                        showNotification('تم استيراد الإجابات بنجاح!', 'success');
-                    } else {
-                        showNotification('تنسيق الملف غير صحيح!', 'error');
-                    }
-                } catch (error) {
-                    showNotification('خطأ في قراءة الملف!', 'error');
-                }
-            };
-            reader.readAsText(file);
-        }
-    };
-    input.click();
-}
-
-function backupData() {
-    const backupData = {
-        resultsHistory: resultsHistory,
-        settings: {
-            passingGrade: document.getElementById('passingGrade').value,
-            gradingSystem: document.getElementById('gradingSystem').value,
-            cameraResolution: document.getElementById('cameraResolution').value,
-            imageQuality: document.getElementById('imageQuality').value
-        },
-        timestamp: new Date().toISOString()
-    };
-    
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `نسخة_احتياطية_${new Date().toLocaleDateString('ar-SA')}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showNotification('تم إنشاء النسخة الاحتياطية بنجاح!', 'success');
-}
-
-function showModal(title, content) {
-    const modal = document.createElement('div');
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-    modal.innerHTML = `
-        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold">${title}</h3>
-                <button onclick="this.closest('.fixed').remove()" class="text-gray-500 hover:text-gray-700">✕</button>
-            </div>
-            ${content}
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
-function showCameraSection() {
-    document.getElementById('cameraSection').classList.remove('hidden');
-    document.getElementById('uploadSection').classList.add('hidden');
-    document.getElementById('cameraTabBtn').className = 'flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors';
-    document.getElementById('uploadTabBtn').className = 'flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors';
-}
-
-function showUploadSection() {
-    document.getElementById('cameraSection').classList.add('hidden');
-    document.getElementById('uploadSection').classList.remove('hidden');
-    document.getElementById('cameraTabBtn').className = 'flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors';
-    document.getElementById('uploadTabBtn').className = 'flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors';
-    
-    if (stream) {
-        stopCamera();
-    }
-}
-
-function downloadStudentsTemplate() {
-    const wb = XLSX.utils.book_new();
-    
-    const data = [
-        ['اسم الطالب', 'الفصل'],
-        ['فاطمة علي محمد الزهراني', '1أ'],
-        ['محمد سالم أحمد القحطاني', '2ب'],
-        ['نورا أحمد عبدالله العتيبي', '2ب'],
-        ['خالد يوسف سعد الغامدي', '3ج'],
-        ['سارة أحمد محمد الحربي', '1أ'],
-        ['عبدالله سعد علي المطيري', '2ب'],
-        ['مريم خالد أحمد الدوسري', '3ج']
-    ];
-    
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    
-    ws['A1'].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFFF00" } } };
-    ws['B1'].s = { font: { bold: true }, fill: { fgColor: { rgb: "FFFF00" } } };
-    
-    ws['!cols'] = [
-        { wch: 30 },
-        { wch: 10 }
-    ];
-    
-    XLSX.utils.book_append_sheet(wb, ws, 'قائمة الطلاب');
-    XLSX.writeFile(wb, 'نموذج_قائمة_الطلاب.xlsx');
-    
-    showNotification('تم تحميل نموذج Excel! املأه ببيانات الطلاب ثم ارفعه.', 'success');
-}
-
-function parseStudentsFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            let jsonData;
-            
-            if (file.name.toLowerCase().endsWith('.csv')) {
-                const csvText = e.target.result;
-                const lines = csvText.split('\n').filter(line => line.trim());
-                jsonData = lines.map(line => {
-                    const result = [];
-                    let current = '';
-                    let inQuotes = false;
-                    
-                    for (let i = 0; i < line.length; i++) {
-                        const char = line[i];
-                        if (char === '"') {
-                            inQuotes = !inQuotes;
-                        } else if (char === ',' && !inQuotes) {
-                            result.push(current.trim());
-                            current = '';
-                        } else {
-                            current += char;
-                        }
-                    }
-                    result.push(current.trim());
-                    return result;
-                });
-            } else {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const firstSheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[firstSheetName];
-                jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-            }
-            
-            if (jsonData.length < 2) {
-                showNotification('الملف يجب أن يحتوي على بيانات الطلاب!', 'error');
-                return;
-            }
-            
-            const students = [];
-            const headers = jsonData[0].map(h => String(h).trim());
-            
-            const nameIndex = headers.findIndex(h => 
-                h.includes('اسم') || h.includes('الاسم') || 
-                h.toLowerCase().includes('name') || 
-                h.toLowerCase().includes('student')
-            );
-            
-            const classIndex = headers.findIndex(h => 
-                h.includes('فصل') || h.includes('الفصل') || 
-                h.includes('صف') || h.includes('الصف') ||
-                h.toLowerCase().includes('class') || 
-                h.toLowerCase().includes('grade')
-            );
-            
-            if (nameIndex === -1) {
-                showNotification('لم يتم العثور على عمود الاسم! تأكد من وجود عمود يحتوي على "اسم الطالب" أو "Name"', 'error');
-                return;
-            }
-            
-            if (classIndex === -1) {
-                showNotification('لم يتم العثور على عمود الفصل! تأكد من وجود عمود يحتوي على "الفصل" أو "Class"', 'error');
-                return;
-            }
-            
-            for (let i = 1; i < jsonData.length; i++) {
-                const row = jsonData[i];
-                if (row && row.length > Math.max(nameIndex, classIndex)) {
-                    const name = String(row[nameIndex] || '').trim();
-                    const className = String(row[classIndex] || '').trim();
-                    
-                    if (name && className) {
-                        students.push({
-                            id: Date.now() + i + Math.random() * 1000,
-                            name: name,
-                            studentId: `ST${String(Date.now() + i).slice(-6)}`,
-                            class: className,
-                            corrected: false,
-                            result: null,
-                            timestamp: null
-                        });
-                    }
-                }
-            }
-            
-            if (students.length === 0) {
-                showNotification('لم يتم العثور على بيانات صحيحة في الملف! تأكد من ملء الاسم والفصل.', 'error');
-                return;
-            }
-            
-            const existingNames = studentsList.map(s => s.name);
-            const newStudents = students.filter(s => !existingNames.includes(s.name));
-            
-            if (newStudents.length === 0) {
-                showNotification('جميع الطلاب موجودون بالفعل في القائمة!', 'info');
-                return;
-            }
-            
-            studentsList = [...studentsList, ...newStudents];
-            localStorage.setItem('studentsList', JSON.stringify(studentsList));
-            displayStudentsList();
-            
-            showNotification(`تم استيراد ${newStudents.length} طالب جديد بنجاح! (تم تجاهل ${students.length - newStudents.length} طالب مكرر)`, 'success');
-            
-        } catch (error) {
-            console.error('خطأ في قراءة الملف:', error);
-            showNotification('خطأ في قراءة الملف! تأكد من أن الملف صحيح وغير محمي بكلمة مرور.', 'error');
-        }
-    };
-    
-    if (file.name.toLowerCase().endsWith('.csv')) {
-        reader.readAsText(file, 'UTF-8');
-    } else {
-        reader.readAsArrayBuffer(file);
-    }
-}
-
-function displayStudentsList() {
-    const studentsListSection = document.getElementById('studentsListSection');
-    const studentsList_div = document.getElementById('studentsList');
-    
-    if (studentsList.length === 0) {
-        studentsListSection.classList.add('hidden');
-        return;
-    }
-    
-    studentsListSection.classList.remove('hidden');
-    updateStudentsStats();
-    updateClassFilter();
-    updateStudentNameDropdown();
-    filterStudentsList();
-}
-
-function updateStudentNameDropdown() {
-    const studentNameSelect = document.getElementById('studentName');
-    const currentValue = studentNameSelect.value;
-    
-    studentNameSelect.innerHTML = '<option value="">اختر اسم الطالب</option>';
-    
-    const uncorrectedStudents = studentsList.filter(s => !s.corrected);
-    uncorrectedStudents.forEach(student => {
-        const option = document.createElement('option');
-        option.value = student.name;
-        option.textContent = student.name;
-        studentNameSelect.appendChild(option);
-    });
-    
-    if (currentValue && uncorrectedStudents.find(s => s.name === currentValue)) {
-        studentNameSelect.value = currentValue;
-        updateStudentClass();
-    }
-}
-
-function updateStudentsStats() {
-    const totalStudents = studentsList.length;
-    const correctedStudents = studentsList.filter(s => s.corrected).length;
-    const pendingStudents = totalStudents - correctedStudents;
-    const uniqueClasses = [...new Set(studentsList.map(s => s.class))].length;
-    
-    document.getElementById('totalStudentsCount').textContent = totalStudents;
-    document.getElementById('correctedCount').textContent = correctedStudents;
-    document.getElementById('pendingCount').textContent = pendingStudents;
-    document.getElementById('uniqueClassesCount').textContent = uniqueClasses;
-}
-
-function updateClassFilter() {
-    const filterClass = document.getElementById('filterClass');
-    const uniqueClasses = [...new Set(studentsList.map(s => s.class))];
-    
-    filterClass.innerHTML = '<option value="">جميع الفصول</option>' +
-        uniqueClasses.map(cls => `<option value="${cls}">${cls}</option>`).join('');
-}
-
-function filterStudentsList() {
-    const searchTerm = document.getElementById('searchStudentName').value.toLowerCase();
-    const classFilter = document.getElementById('filterClass').value;
-    const statusFilter = document.getElementById('filterStatus').value;
-    
-    let filteredStudents = [...studentsList];
-    
-    if (searchTerm) {
-        filteredStudents = filteredStudents.filter(student => 
-            student.name.toLowerCase().includes(searchTerm)
-        );
-    }
-    
-    if (classFilter) {
-        filteredStudents = filteredStudents.filter(student => 
-            student.class === classFilter
-        );
-    }
-    
-    if (statusFilter) {
-        filteredStudents = filteredStudents.filter(student => 
-            statusFilter === 'corrected' ? student.corrected : !student.corrected
-        );
-    }
-    
-    displayFilteredStudents(filteredStudents);
-}
-
-function displayFilteredStudents(students) {
-    const studentsList_div = document.getElementById('studentsList');
-    
-    if (students.length === 0) {
-        studentsList_div.innerHTML = '<div class="text-center text-gray-500 py-4">لا توجد نتائج تطابق البحث</div>';
-        return;
-    }
-    
-    studentsList_div.innerHTML = students.map(student => `
-        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border ${student.corrected ? 'border-green-300 bg-green-50' : 'border-gray-200'}">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full flex items-center justify-center ${student.corrected ? 'bg-green-500 text-white' : 'bg-blue-500 text-white'}">
-                    ${student.corrected ? '✓' : student.name.charAt(0)}
-                </div>
-                <div>
-                    <div class="font-semibold text-gray-800">${student.name}</div>
-                    <div class="text-sm text-gray-600">${student.studentId} | ${student.class}</div>
-                    ${student.corrected ? `<div class="text-xs text-green-600">تم التصحيح: ${student.result?.percentage || '-'}</div>` : ''}
-                </div>
-            </div>
-            <div class="flex gap-2">
-                ${!student.corrected ? `
-                    <button onclick="selectStudent(${student.id})" 
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
-                        اختيار
-                    </button>
-                ` : `
-                    <button onclick="viewStudentResult(${student.id})" 
-                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
-                        عرض النتيجة
-                    </button>
-                `}
-                <button onclick="editStudent(${student.id})" 
-                        class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm">
-                    تعديل
-                </button>
-                <button onclick="deleteStudent(${student.id})" 
-                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
-                    حذف
-                </button>
-            </div>
-        </div>
-    `).join('');
-}
-
-function selectStudent(studentId) {
-    const student = studentsList.find(s => s.id === studentId);
-    if (!student) return;
-    
-    currentStudent = student;
-    
-    document.getElementById('studentName').value = student.name;
-    document.getElementById('studentClass').value = student.class;
-    
-    document.getElementById('currentStudentName').textContent = student.name;
-    document.getElementById('currentStudentClass').textContent = student.class;
-    document.getElementById('currentStudentSection').classList.remove('hidden');
-    
-    showNotification(`تم اختيار الطالب: ${student.name}`, 'success');
-}
-
-function selectDifferentStudent() {
-    document.getElementById('currentStudentSection').classList.add('hidden');
-    currentStudent = null;
-    document.getElementById('studentName').value = '';
-    document.getElementById('studentClass').value = '';
-}
-
-function editStudent(studentId) {
-    const student = studentsList.find(s => s.id === studentId);
-    if (!student) return;
-    
-    const newName = prompt('اسم الطالب الجديد:', student.name);
-    if (newName && newName.trim()) {
-        student.name = newName.trim();
-    }
-    
-    const newStudentId = prompt('رقم الطالب الجديد:', student.studentId);
-    if (newStudentId && newStudentId.trim()) {
-        student.studentId = newStudentId.trim();
-    }
-    
-    const newClass = prompt('الصف الجديد:', student.class);
-    if (newClass && newClass.trim()) {
-        student.class = newClass.trim();
-    }
-    
-    localStorage.setItem('studentsList', JSON.stringify(studentsList));
-    displayStudentsList();
-    showNotification('تم تحديث بيانات الطالب!', 'success');
-}
-
-function deleteStudent(studentId) {
-    const student = studentsList.find(s => s.id === studentId);
-    if (!student) return;
-    
-    if (confirm(`هل أنت متأكد من حذف الطالب: ${student.name}؟`)) {
-        studentsList = studentsList.filter(s => s.id !== studentId);
-        localStorage.setItem('studentsList', JSON.stringify(studentsList));
-        displayStudentsList();
-        
-        if (currentStudent && currentStudent.id === studentId) {
-            selectDifferentStudent();
-        }
-        
-        showNotification('تم حذف الطالب!', 'success');
-    }
-}
-
-function clearStudentsList() {
-    if (studentsList.length === 0) {
-        showNotification('القائمة فارغة بالفعل!', 'info');
-        return;
-    }
-    
-    if (confirm('هل أنت متأكد من حذف جميع الطلاب؟')) {
-        studentsList = [];
-        localStorage.removeItem('studentsList');
-        displayStudentsList();
-        selectDifferentStudent();
-        showNotification('تم مسح قائمة الطلاب!', 'success');
-    }
-}
-
-function viewStudentResult(studentId) {
-    const student = studentsList.find(s => s.id === studentId);
-    if (!student || !student.result) return;
-    
-    const result = student.result;
-    const modalContent = `
-        <div class="text-center">
-            <div class="mb-4">
-                <h4 class="text-lg font-semibold">${student.name}</h4>
-                <p class="text-sm text-gray-600">${student.studentId} | ${student.class}</p>
-            </div>
-            <div class="grid grid-cols-2 gap-4 mb-4">
-                <div class="bg-green-100 p-3 rounded-lg">
-                    <div class="text-2xl font-bold text-green-600">${result.correctCount}</div>
-                    <div class="text-sm text-green-800">إجابات صحيحة</div>
-                </div>
-                <div class="bg-red-100 p-3 rounded-lg">
-                    <div class="text-2xl font-bold text-red-600">${result.wrongCount}</div>
-                    <div class="text-sm text-red-800">إجابات خاطئة</div>
-                </div>
-            </div>
-            <div class="bg-blue-100 p-4 rounded-lg">
-                <div class="text-3xl font-bold text-blue-600">${result.percentage}</div>
-                <div class="text-sm text-blue-800">${result.grade}</div>
-            </div>
-            <div class="mt-4 text-xs text-gray-500">
-                تم التصحيح: ${student.timestamp}
-            </div>
-        </div>
-    `;
-    
-    showModal(`نتيجة ${student.name}`, modalContent);
-}
-
-function toggleMultipleCorrection() {
-    const multipleCorrectionSection = document.getElementById('multipleCorrectionSection');
-    
-    if (multipleCorrectionSection.classList.contains('hidden')) {
-        if (studentsList.filter(s => !s.corrected).length === 0) {
-            showNotification('لا توجد أوراق في انتظار التصحيح!', 'error');
-            return;
-        }
-        multipleCorrectionSection.classList.remove('hidden');
-        setupMultipleCorrection();
-    } else {
-        multipleCorrectionSection.classList.add('hidden');
-        resetMultipleCorrectionUI();
-    }
-}
-
-function setupMultipleCorrection() {
-    multiCorrectionQueue = studentsList.filter(s => !s.corrected);
-    currentMultiIndex = 0;
-    multiCorrectionResults = [];
-    
-    updateMultiCorrectionProgress();
-    
-    document.getElementById('progressText').textContent = `0 من ${multiCorrectionQueue.length}`;
-    document.getElementById('progressBar').style.width = '0%';
-}
-
-function startMultipleCorrection() {
-    if (correctAnswers.length === 0) {
-        showNotification('يرجى إعداد الإجابات الصحيحة أولاً!', 'error');
-        return;
-    }
-    
-    isMultipleCorrectionMode = true;
-    currentMultiIndex = 0;
-    
-    document.getElementById('startMultiBtn').disabled = true;
-    document.getElementById('skipStudentBtn').disabled = false;
-    document.getElementById('pauseMultiBtn').disabled = false;
-    document.getElementById('stopMultiBtn').disabled = false;
-    
-    updateMultiCorrectionButtons();
-    showCurrentMultiStudent();
-    
-    showNotification('تم بدء التصحيح المتعدد! صوّر ورقة الطالب الأول.', 'success');
-}
-
-function showCurrentMultiStudent() {
-    if (currentMultiIndex >= multiCorrectionQueue.length) {
-        completeMultipleCorrection();
-        return;
-    }
-    
-    const student = multiCorrectionQueue[currentMultiIndex];
-    
-    document.getElementById('multiStudentName').textContent = student.name;
-    document.getElementById('multiStudentClass').textContent = student.class;
-    document.getElementById('currentStudentNumber').textContent = currentMultiIndex + 1;
-    document.getElementById('currentMultiStudent').classList.remove('hidden');
-    
-    document.getElementById('studentName').value = student.name;
-    document.getElementById('studentClass').value = student.class;
-    
-    updateMultiCorrectionProgress();
-}
-
-function updateMultiCorrectionProgress() {
-    const progress = (currentMultiIndex / multiCorrectionQueue.length) * 100;
-    document.getElementById('progressText').textContent = `${currentMultiIndex} من ${multiCorrectionQueue.length}`;
-    document.getElementById('progressBar').style.width = progress + '%';
-}
-
-function skipCurrentStudent() {
-    if (currentMultiIndex < multiCorrectionQueue.length) {
-        const student = multiCorrectionQueue[currentMultiIndex];
-        multiCorrectionResults.push({
-            student: student,
-            status: 'skipped',
-            result: null
-        });
-        
-        currentMultiIndex++;
-        showCurrentMultiStudent();
-        showNotification(`تم تخطي ${student.name}. انتقل للطالب التالي.`, 'info');
-    }
-}
-
-function pauseMultipleCorrection() {
-    isMultipleCorrectionMode = false;
-    
-    document.getElementById('startMultiBtn').disabled = false;
-    document.getElementById('skipStudentBtn').disabled = true;
-    document.getElementById('pauseMultiBtn').disabled = true;
-    document.getElementById('stopMultiBtn').disabled = true;
-    
-    updateMultiCorrectionButtons();
-    
-    showNotification('تم إيقاف التصحيح المتعدد مؤقتاً. يمكنك المتابعة لاحقاً.', 'info');
-}
-
-function stopMultipleCorrection() {
-    if (confirm('هل أنت متأكد من إيقاف التصحيح المتعدد؟ سيتم فقدان التقدم الحالي.')) {
-        resetMultipleCorrection();
-        showNotification('تم إيقاف التصحيح المتعدد.', 'info');
-    }
-}
-
-function resetMultipleCorrection() {
-    isMultipleCorrectionMode = false;
-    multiCorrectionQueue = [];
-    currentMultiIndex = 0;
-    multiCorrectionResults = [];
-    
-    resetMultipleCorrectionUI();
-    document.getElementById('multipleCorrectionSection').classList.add('hidden');
-}
-
-function resetMultipleCorrectionUI() {
-    document.getElementById('startMultiBtn').disabled = false;
-    document.getElementById('skipStudentBtn').disabled = true;
-    document.getElementById('pauseMultiBtn').disabled = true;
-    document.getElementById('stopMultiBtn').disabled = true;
-    document.getElementById('currentMultiStudent').classList.add('hidden');
-    document.getElementById('multiCorrectionReport').classList.add('hidden');
-    
-    updateMultiCorrectionButtons();
-}
-
-function updateMultiCorrectionButtons() {
-    const buttons = [
-        { id: 'startMultiBtn', enabled: !document.getElementById('startMultiBtn').disabled },
-        { id: 'skipStudentBtn', enabled: !document.getElementById('skipStudentBtn').disabled },
-        { id: 'pauseMultiBtn', enabled: !document.getElementById('pauseMultiBtn').disabled },
-        { id: 'stopMultiBtn', enabled: !document.getElementById('stopMultiBtn').disabled }
-    ];
-    
-    buttons.forEach(btn => {
-        const element = document.getElementById(btn.id);
-        if (btn.enabled) {
-            element.className = element.className.replace('disabled:bg-gray-400 disabled:cursor-not-allowed', '');
-        } else {
-            if (!element.className.includes('disabled:bg-gray-400')) {
-                element.className += ' disabled:bg-gray-400 disabled:cursor-not-allowed';
-            }
-        }
-    });
-}
-
-// إكمال التصحيح المتعدد
-function completeMultipleCorrection() {
-    isMultipleCorrectionMode = false;
-    generateMultiCorrectionReport();
-    
-    document.getElementById('startMultiBtn').disabled = false;
-    document.getElementById('skipStudentBtn').disabled = true;
-    document.getElementById('pauseMultiBtn').disabled = true;
-    document.getElementById('stopMultiBtn').disabled = true;
-    document.getElementById('currentMultiStudent').classList.add('hidden');
-    
-    showNotification('تم إكمال التصحيح المتعدد!', 'success');
-}
-
-// إعادة تعيين التصحيح المتعدد
-function resetMultiCorrection() {
-    document.getElementById('multiCorrectionReport').classList.add('hidden');
-    setupMultipleCorrection();
-    showNotification('تم إعادة تعيين التصحيح المتعدد.', 'info');
-}
-
-function generateMultiCorrectionReport() {
-    const reportContent = document.getElementById('multiReportContent');
-    const totalStudents = multiCorrectionResults.length;
-    const correctedStudents = multiCorrectionResults.filter(r => r.status === 'completed').length;
-    const skippedStudents = multiCorrectionResults.filter(r => r.status === 'skipped').length;
-    
-    let avgScore = 0;
-    const completedResults = multiCorrectionResults.filter(r => r.status === 'completed' && r.result);
-    if (completedResults.length > 0) {
-        avgScore = Math.round(completedResults.reduce((sum, r) => sum + parseInt(r.result.percentage), 0) / completedResults.length);
-    }
-    
-    reportContent.innerHTML = `
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div class="bg-blue-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-blue-600">${totalStudents}</div>
-                <div class="text-xs text-blue-800">إجمالي الطلاب</div>
-            </div>
-            <div class="bg-green-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-green-600">${correctedStudents}</div>
-                <div class="text-xs text-green-800">تم تصحيحها</div>
-            </div>
-            <div class="bg-yellow-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-yellow-600">${skippedStudents}</div>
-                <div class="text-xs text-yellow-800">تم تخطيها</div>
-            </div>
-            <div class="bg-purple-100 p-3 rounded-lg text-center">
-                <div class="text-2xl font-bold text-purple-600">${avgScore}%</div>
-                <div class="text-xs text-purple-800">متوسط الدرجات</div>
-            </div>
-        </div>
-        
-        <div class="space-y-2 max-h-64 overflow-y-auto">
-            ${multiCorrectionResults.map(result => `
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border ${result.status === 'completed' ? 'border-green-300' : 'border-yellow-300'}">
-                    <div>
-                        <div class="font-semibold">${result.student.name}</div>
-                        <div class="text-sm text-gray-600">${result.student.studentId} | ${result.student.class}</div>
-                    </div>
-                    <div class="text-right">
-                        ${result.status === 'completed' ? 
-                            `<div class="text-lg font-bold text-green-600">${result.result.percentage}</div>
-                             <div class="text-sm text-green-800">${result.result.grade}</div>` :
-                            `<div class="text-sm text-yellow-600">تم التخطي</div>`
-                        }
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    `;
-    
-    document.getElementById('multiCorrectionReport').classList.remove('hidden');
-}
-
-function exportMultiReport() {
-    const reportData = multiCorrectionResults.map(result => ({
-        'اسم الطالب': result.student.name,
-        'رقم الطالب': result.student.studentId,
-        'الصف': result.student.class,
-        'الحالة': result.status === 'completed' ? 'تم التصحيح' : 'تم التخطي',
-        'الدرجة': result.result ? result.result.percentage : '-',
-        'التقدير': result.result ? result.result.grade : '-'
-    }));
-    
-    const csvContent = 'اسم الطالب,رقم الطالب,الصف,الحالة,الدرجة,التقدير\n' +
-        reportData.map(row => Object.values(row).map(val => `"${val}"`).join(',')).join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `تقرير_التصحيح_المتعدد_${new Date().toLocaleDateString('ar-SA')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    
-    showNotification('تم تصدير تقرير التصحيح المتعدد!', 'success');
-}
-
-async function processImageWithAI(imageSrc) {
-    showNotification('جاري تحليل الصورة باستخدام OpenCV...', 'info');
-    const res = await fetch(imageSrc);
-    const blob = await res.blob();
-    const formData = new FormData();
-    formData.append('image', blob, 'answer_sheet.jpg');
-    // إضافة عدد الأسئلة والخيارات من الواجهة
-    formData.append('num_questions', document.getElementById('questionCount').value || 10);
-    formData.append('options_per_q', document.getElementById('optionsCount').value || 4);
-
-    const response = await fetch('/api/correct', {
-        method: 'POST',
-        body: formData
-    });
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error || 'فشل في التحليل');
-    return data.answers; // ["A", "B", "فراغ", ...]
-}
-
-        // === معالجة النتائج ===
-        function processAnswers() {
-            if (correctAnswers.length === 0) {
-                showNotification('يرجى إعداد الإجابات الصحيحة أولاً!', 'error');
-                return;
-            }
-            startTime = Date.now();
-            const capturedImage = document.getElementById('capturedImage');
-            processImageWithAI(capturedImage.src)
-                .then(results => {
-                    studentAnswers = results;
-                    showAnswerVerification();
-                })
-                .catch(err => {
-                    showNotification('فشل في تحليل الصورة: ' + err.message, 'error');
-                });
-        }
-
-        function processUploadedImage() {
-            if (correctAnswers.length === 0) {
-                showNotification('يرجى إعداد الإجابات الصحيحة أولاً!', 'error');
-                return;
-            }
-            startTime = Date.now();
-            const uploadedImage = document.getElementById('imagePreview');
-            processImageWithAI(uploadedImage.src)
-                .then(results => {
-                    studentAnswers = results;
-                    showAnswerVerification();
-                    document.getElementById('capturedSection').classList.add('hidden');
-                })
-                .catch(err => {
-                    showNotification('فشل في تحليل الصورة: ' + err.message, 'error');
-                });
-        }
-
-        // === تهيئة عند التحميل ===
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('examDate').value = new Date().toISOString().split('T')[0];
-            document.getElementById('studentsFileInput').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) parseStudentsFile(file);
-            });
-            document.getElementById('imageInput').addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        document.getElementById('imagePreview').src = ev.target.result;
-                        document.getElementById('imagePreviewContainer').classList.remove('hidden');
-                        document.getElementById('processUploadBtn').disabled = false;
-                        showNotification('تم تحميل الصورة بنجاح!', 'success');
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        });
-		// تنظيف الموارد
-function cleanupResources() {
-    if (stream) {
-        stopCamera();
-    }
-    
-    const capturedImage = document.getElementById('capturedImage');
-    const imagePreview = document.getElementById('imagePreview');
-    
-    if (capturedImage.src.startsWith('data:')) {
-        capturedImage.src = '';
-    }
-    
-    if (imagePreview.src.startsWith('data:')) {
-        imagePreview.src = '';
-    }
-}
-
-// تحسين الصورة للمعالجة
-function optimizeImageForProcessing(imageElement) {
-    showNotification('جاري تحسين جودة الصورة...', 'info');
-    
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(imageElement);
-        }, 1000);
-    });
-}
     </script>
 </body>
 </html>
