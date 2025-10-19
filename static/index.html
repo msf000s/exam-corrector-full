@@ -2472,12 +2472,16 @@ async function processImageWithAI(imageSrc) {
     const blob = await res.blob();
     const formData = new FormData();
     formData.append('image', blob, 'answer_sheet.jpg');
-    const response = await fetch('/correct', {
+    // إضافة عدد الأسئلة والخيارات من الواجهة
+    formData.append('num_questions', document.getElementById('questionCount').value || 10);
+    formData.append('options_per_q', document.getElementById('optionsCount').value || 4);
+
+    const response = await fetch('/api/correct', {
         method: 'POST',
         body: formData
     });
     const data = await response.json();
-    if (data.error) throw new Error(data.error);
+    if (!data.success) throw new Error(data.error || 'فشل في التحليل');
     return data.answers; // ["A", "B", "فراغ", ...]
 }
 
