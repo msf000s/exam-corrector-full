@@ -3,20 +3,22 @@ import google.generativeai as genai
 import os
 from PIL import Image
 import json
-import re
 
 # Initialize Flask app
 app = Flask(__name__, static_folder='static')
 
 # Configure Gemini API key from environment variable
 try:
+    # Ensure you use the correct environment variable name set in Render
     GOOGLE_API_KEY = os.environ.get("GEMINI_AI_KEY")
     if not GOOGLE_API_KEY:
         raise ValueError("GEMINI_AI_KEY is not set in the environment variables")
     genai.configure(api_key=GOOGLE_API_KEY)
+    
     # --- التغيير هنا ---
-    # العودة إلى النموذج القياسي والمستقر لتحليل الصور والنصوص
-    model = genai.GenerativeModel('gemini-pro-vision')
+    # تم التحديث إلى أحدث نموذج فلاش مستقر ومتاح حالياً
+    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+
 except Exception as e:
     print(f"Error during Gemini initialization: {e}")
     model = None
@@ -52,7 +54,6 @@ Use "Blank" if no option is shaded for a question. In Arabic, this is "فراغ"
 Do not write any explanation or extra text. Only the list.
         """.strip()
 
-        # The model 'gemini-pro-vision' is multimodal and handles image/text input.
         response = model.generate_content([prompt, img])
 
         if not response.text:
@@ -60,6 +61,7 @@ Do not write any explanation or extra text. Only the list.
 
         raw_text = response.text.strip()
         
+        # Clean the response if it's wrapped in markdown code block
         if raw_text.startswith("```json"):
             raw_text = raw_text[7:-3].strip()
         elif raw_text.startswith("```"):
@@ -67,6 +69,7 @@ Do not write any explanation or extra text. Only the list.
 
         answers = None
         try:
+            # Replace English "Blank" with Arabic "فراغ" for consistency
             cleaned_text = raw_text.replace('"Blank"', '"فراغ"')
             answers = json.loads(cleaned_text)
         except json.JSONDecodeError:

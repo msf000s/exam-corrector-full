@@ -1,4 +1,1 @@
-Flask
-google-generativeai
-Pillow
-gunicorn
+This file tells Render which Python libraries to install.By not specifying a version, Render will install the latest one.FlaskPillowgoogle-generativeaigunicorn
