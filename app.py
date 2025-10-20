@@ -14,8 +14,7 @@ try:
     if not GOOGLE_API_KEY:
         raise ValueError("GEMINI_API_KEY is not set in the environment variables")
     genai.configure(api_key=GOOGLE_API_KEY)
-    # --- التغيير هنا ---
-    # تم التحديث إلى أحدث نموذج مستقر لتجنب أخطاء "Model Not Found"
+    # Using the latest stable model to avoid "Model Not Found" errors
     model = genai.GenerativeModel('gemini-1.5-pro-latest')
 except Exception as e:
     print(f"Error during Gemini initialization: {e}")
