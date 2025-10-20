@@ -1,7 +1,5 @@
-This file tells Render which Python libraries to install.
-
-By not specifying a version, Render will install the latest one.
-
+# This file tells Render which Python libraries to install.
+# By not specifying a version, the latest one will be installed.
 Flask
 Pillow
 google-generativeai

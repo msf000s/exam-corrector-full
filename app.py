@@ -9,15 +9,14 @@ app = Flask(__name__, static_folder='static')
 
 # Configure Gemini API key from environment variable
 try:
-    # Ensure you use the correct environment variable name set in Render
-    GOOGLE_API_KEY = os.environ.get("GEMINI_AI_KEY")
-    if not GOOGLE_API_KEY:
+    GEMINI_API_KEY = os.environ.get("GEMINI_AI_KEY")
+    if not GEMINI_API_KEY:
         raise ValueError("GEMINI_AI_KEY is not set in the environment variables")
-    genai.configure(api_key=GOOGLE_API_KEY)
+    genai.configure(api_key=GEMINI_API_KEY)
     
-    # --- التغيير هنا ---
-    # تم التحديث إلى أحدث نموذج فلاش مستقر ومتاح حالياً
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+    # --- التغيير النهائي هنا ---
+    # استخدام اسم نموذج صحيح ومتاح من القائمة التي تم استخراجها
+    model = genai.GenerativeModel('gemini-2.5-flash')
 
 except Exception as e:
     print(f"Error during Gemini initialization: {e}")
@@ -61,15 +60,13 @@ Do not write any explanation or extra text. Only the list.
 
         raw_text = response.text.strip()
         
-        # Clean the response if it's wrapped in markdown code block
         if raw_text.startswith("```json"):
             raw_text = raw_text[7:-3].strip()
         elif raw_text.startswith("```"):
-             raw_text = raw_text[3:-3].strip()
+            raw_text = raw_text[3:-3].strip()
 
         answers = None
         try:
-            # Replace English "Blank" with Arabic "فراغ" for consistency
             cleaned_text = raw_text.replace('"Blank"', '"فراغ"')
             answers = json.loads(cleaned_text)
         except json.JSONDecodeError:
@@ -81,7 +78,7 @@ Do not write any explanation or extra text. Only the list.
             }), 500
         
         if not isinstance(answers, list):
-             return jsonify({"success": False, "error": "The response was not a list."}), 500
+            return jsonify({"success": False, "error": "The response was not a list."}), 500
 
         if len(answers) != num_questions:
             return jsonify({
