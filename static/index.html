@@ -265,7 +265,6 @@
                         </div>
                     </div>
                      <button onclick="generateAnswerSheet()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">تحديث شكل النموذج</button>
-                     <button onclick="printBlankSheet()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm ml-2">🖨️ طباعة نموذج فارغ</button>
                      
                     <div class="mt-6 pt-4 border-t">
                          <h3 class="text-lg font-bold text-gray-800 mb-3">طريقة إدخال الإجابات الصحيحة:</h3>
@@ -584,6 +583,8 @@
                 document.getElementById('capturedSection').classList.remove('hidden');
                 document.getElementById('uploadSection').classList.add('hidden');
                 document.getElementById('cameraSection').classList.add('hidden');
+                // The options buttons should remain visible
+                // document.getElementById('uploadOptions').classList.add('hidden');
                  processAnswers();
             };
             if (typeof file === 'string') {
@@ -705,8 +706,7 @@
             currentStudent = studentsList.find(s => s.id === parseInt(studentId));
             if (currentStudent) {
                 document.getElementById('correctionStudentSelect').value = currentStudent.id;
-                showNotification(`تم اختيار الطالب: ${currentStudent.name}`, 'success');
-                showSection('correction');
+                showNotification(`تم اختيار الطالب: ${currentStudent.name}. يمكنك الآن الانتقال إلى قسم 'التصحيح'.`, 'success');
             }
         }
 
@@ -836,6 +836,7 @@
                     </div>
                 `;
             }
+            document.getElementById('answerSheet').classList.remove('hidden');
         }
 
         function saveCorrectAnswers() {
@@ -849,6 +850,7 @@
             };
             localStorage.setItem('answerKeyModels', JSON.stringify(answerKeyModels));
             document.getElementById('examInfoSection').classList.remove('hidden');
+            document.getElementById('answerSheet').classList.add('hidden');
             showNotification(`تم حفظ الإجابات لـ "${modelName}".`, 'success');
         }
 
@@ -858,7 +860,7 @@
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                 document.getElementById('camera').srcObject = stream;
                 document.getElementById('cameraSection').classList.remove('hidden');
-                document.getElementById('uploadSection').classList.add('hidden'); // إخفاء قسم التحميل
+                document.getElementById('uploadSection').classList.add('hidden');
                 startAutoCapture();
             } catch (error) {
                 showNotification('لا يمكن الوصول للكاميرا.', 'error');
@@ -887,7 +889,7 @@
             if(autoCaptureTimer) clearInterval(autoCaptureTimer);
             document.getElementById('countdown').style.display = 'none';
             document.getElementById('cameraSection').classList.add('hidden');
-            document.getElementById('capturedSection').classList.add('hidden'); // Clean up captured image
+            document.getElementById('capturedSection').classList.add('hidden');
         }
 
         function captureAndProcess() {
@@ -895,22 +897,20 @@
             const canvas = document.getElementById('canvas');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
-            if (!isScanningForKey) {
-                 if (stream) {
-                    // Don't stop the camera, just reset the countdown for the next one.
-                    clearInterval(autoCaptureTimer);
-                    startAutoCapture();
-                 }
-            } else {
-                stopCamera();
+            
+            clearInterval(autoCaptureTimer);
+            
+            if (isScanningForKey) {
+                 stopCamera();
             }
+
             handleImageFile(canvas.toDataURL('image/jpeg'));
         }
 
         function showUploadSection() {
-            stopCamera(); // إيقاف الكاميرا عند التحويل إلى التحميل
+            stopCamera();
             document.getElementById('uploadSection').classList.remove('hidden');
-            document.getElementById('cameraSection').classList.add('hidden'); // إخفاء قسم الكاميرا
+            document.getElementById('cameraSection').classList.add('hidden');
         }
         
         async function processAnswers() {
@@ -961,8 +961,7 @@
                 }
             } catch (err) {
                 showNotification(`فشل تحليل الصورة: ${err.message}`, 'error');
-                if(!isScanningForKey) resetForNewSheet();
-                isScanningForKey = false;
+                resetForNewSheet();
             } finally {
                 processBtn.disabled = false; spinner.classList.add('hidden'); btnText.textContent = '🔍 تحليل الإجابات';
             }
@@ -1061,13 +1060,15 @@
 
         function resetForNewSheet() {
             document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('verificationSection').classList.add('hidden');
+            document.getElementById('capturedSection').classList.add('hidden');
             selectDifferentStudent();
             showNotification('تم الحفظ! يمكنك الآن تصحيح ورقة جديدة.', 'success');
-            // If camera is still running, restart auto-capture for the next sheet.
+            
             if (stream) {
-                document.getElementById('capturedSection').classList.add('hidden');
-                document.getElementById('cameraSection').classList.remove('hidden');
-                startAutoCapture();
+                startAutoCapture(); 
+            } else {
+                document.getElementById('uploadOptions').classList.remove('hidden');
             }
         }
 
@@ -1075,7 +1076,10 @@
         function updateHistoryDisplay() {
             const historyList = document.getElementById('historyList');
             document.getElementById('historySection').classList.toggle('hidden', resultsHistory.length === 0);
-            if (resultsHistory.length === 0) return;
+            if (resultsHistory.length === 0) {
+                historyList.innerHTML = '';
+                return;
+            }
             historyList.innerHTML = resultsHistory.map(r => `
                 <div class="bg-gray-50 rounded-lg p-3 border-r-4 border-blue-500">
                     <div class="flex justify-between items-center">
