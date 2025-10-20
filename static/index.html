@@ -74,7 +74,7 @@
         <!-- Sidebar -->
         <aside class="w-full md:w-64 bg-gray-800 text-white p-4 md:min-h-screen">
             <h1 class="text-2xl font-bold text-center mb-8">المصحح الذكي</h1>
-            <nav class="flex flex-row md:flex-col gap-2">
+            <nav class="flex flex-row flex-wrap md:flex-col gap-2">
                 <a href="#dashboard" class="nav-link active p-3 rounded-lg hover:bg-gray-700" onclick="showSection('dashboard')">🏠 لوحة التحكم</a>
                 <a href="#students" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('students')">👥 الطلاب</a>
                 <a href="#answer-key" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('answer-key')">🔑 نماذج الإجابة</a>
@@ -90,8 +90,8 @@
             <!-- Section: Dashboard -->
             <section id="dashboard" class="app-section active">
                 <header class="mb-10">
-                    <h1 class="text-5xl font-bold text-gray-800 mb-3 text-center">أطلق العنان لقوة التصحيح الفوري</h1>
-                    <p class="text-gray-600 text-xl text-center max-w-3xl mx-auto">"المصحح الذكي" هو مساعدك الرقمي الذي يحول مهمة تصحيح الاختبارات المرهقة إلى عملية سريعة ودقيقة وممتعة باستخدام أحدث تقنيات الذكاء الاصطناعي.</p>
+                    <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-3 text-center">أطلق العنان لقوة التصحيح الفوري</h1>
+                    <p class="text-lg md:text-xl text-center max-w-3xl mx-auto text-gray-600">"المصحح الذكي" هو مساعدك الرقمي الذي يحول مهمة تصحيح الاختبارات المرهقة إلى عملية سريعة ودقيقة وممتعة باستخدام أحدث تقنيات الذكاء الاصطناعي.</p>
                 </header>
 
                 <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
@@ -289,20 +289,11 @@
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">📷 تصوير أو تحميل ورقة الإجابة</h2>
 
-                    <div id="currentStudentSection" class="hidden bg-green-50 rounded-lg p-4 mt-4">
-                        <h3 class="text-lg font-semibold text-green-800 mb-3">👤 الطالب المحدد للتصحيح</h3>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <div class="font-semibold" id="currentStudentName">-</div>
-                                <div class="text-sm text-gray-600">
-                                    الفصل: <span id="currentStudentClass">-</span>
-                                </div>
-                            </div>
-                            <button onclick="selectDifferentStudent()" 
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
-                                تغيير
-                            </button>
-                        </div>
+                    <div class="mb-4">
+                        <label for="correctionStudentSelect" class="block text-sm font-medium text-gray-700 mb-2">👤 اختر طالباً للتصحيح الفردي:</label>
+                        <select id="correctionStudentSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- اختر من القائمة --</option>
+                        </select>
                     </div>
 
                     <div id="uploadOptions" class="flex flex-col sm:flex-row gap-4 my-6">
@@ -523,6 +514,9 @@
             });
             document.querySelector(`.nav-link[href="#${sectionId}"]`).classList.add('active');
             
+            if (sectionId === 'correction') {
+                populateCorrectionStudentSelect();
+            }
             // Hide multi-correction if navigating away
             if (sectionId !== 'correction') {
                  document.getElementById('multipleCorrectionSection').classList.add('hidden');
@@ -540,13 +534,20 @@
                 if (file) handleImageFile(file);
             });
              document.getElementById('answerKeyModel').addEventListener('change', switchModel);
+             document.getElementById('correctionStudentSelect').addEventListener('change', (e) => {
+                if(e.target.value) {
+                    selectStudent(parseInt(e.target.value));
+                } else {
+                    selectDifferentStudent();
+                }
+             });
 
             loadInitialUI();
         });
 
         function loadInitialUI() {
             if (Object.keys(answerKeyModels).length === 0) {
-                answerKeyModels['نموذج أ'] = []; // Default model
+                answerKeyModels['نموذج أ'] = { name: "نموذج أ", subject: "", answers: [] };
             }
             updateModelsDropdown();
             if (studentsList.length > 0) displayStudentsList();
@@ -581,7 +582,6 @@
             reader.onload = (e) => {
                 document.getElementById('capturedImage').src = e.target.result;
                 document.getElementById('capturedSection').classList.remove('hidden');
-                document.getElementById('uploadOptions').classList.add('hidden');
                 document.getElementById('uploadSection').classList.add('hidden');
                 document.getElementById('cameraSection').classList.add('hidden');
                  processAnswers();
@@ -655,6 +655,7 @@
             updateStudentsStats();
             updateClassFilter();
             filterStudentsList();
+            populateCorrectionStudentSelect();
         }
 
         function updateStudentsStats() {
@@ -701,11 +702,9 @@
         }
         
         function selectStudent(studentId) {
-            currentStudent = studentsList.find(s => s.id === studentId);
+            currentStudent = studentsList.find(s => s.id === parseInt(studentId));
             if (currentStudent) {
-                document.getElementById('currentStudentName').textContent = currentStudent.name;
-                document.getElementById('currentStudentClass').textContent = currentStudent.class;
-                document.getElementById('currentStudentSection').classList.remove('hidden');
+                document.getElementById('correctionStudentSelect').value = currentStudent.id;
                 showNotification(`تم اختيار الطالب: ${currentStudent.name}`, 'success');
                 showSection('correction');
             }
@@ -713,8 +712,21 @@
 
         function selectDifferentStudent() {
             currentStudent = null;
-            document.getElementById('currentStudentSection').classList.add('hidden');
+            document.getElementById('correctionStudentSelect').value = '';
         }
+        
+        function populateCorrectionStudentSelect() {
+            const select = document.getElementById('correctionStudentSelect');
+            select.innerHTML = '<option value="">-- اختر من القائمة --</option>';
+            const pendingStudents = studentsList.filter(s => !s.corrected);
+            pendingStudents.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.id;
+                option.textContent = `${student.name} - ${student.class}`;
+                select.appendChild(option);
+            });
+        }
+
 
         function clearStudentsList() {
             if (confirm('هل أنت متأكد من حذف جميع الطلاب؟ سيتم حذف جميع السجلات أيضاً.')) {
@@ -730,7 +742,7 @@
         // === Answer Key Models Management ===
         function updateModelsDropdown() {
             const select = document.getElementById('answerKeyModel');
-            const currentModel = select.value;
+            const currentModelName = select.value;
             select.innerHTML = '';
             Object.keys(answerKeyModels).forEach(name => {
                 const option = document.createElement('option');
@@ -738,15 +750,17 @@
                 option.textContent = name;
                 select.appendChild(option);
             });
-            select.value = currentModel && answerKeyModels[currentModel] ? currentModel : Object.keys(answerKeyModels)[0];
+            select.value = currentModelName && answerKeyModels[currentModelName] ? currentModelName : Object.keys(answerKeyModels)[0];
             switchModel();
         }
 
         function switchModel() {
             const modelName = document.getElementById('answerKeyModel').value;
             if (!modelName) return;
-            correctAnswers = answerKeyModels[modelName] || [];
+            const modelData = answerKeyModels[modelName];
+            correctAnswers = modelData.answers || [];
             document.getElementById('questionCount').value = correctAnswers.length || 10;
+            document.getElementById('subjectName').value = modelData.subject || '';
             generateAnswerSheet();
             showNotification(`تم التحويل إلى "${modelName}"`, 'info');
         }
@@ -760,7 +774,7 @@
                 case 'new':
                     newName = prompt("أدخل اسم النموذج الجديد (مثال: نموذج ب):");
                     if (newName && !answerKeyModels[newName]) {
-                        answerKeyModels[newName] = [];
+                        answerKeyModels[newName] = { name: newName, subject: "", answers: [] };
                         select.value = newName;
                     } else if (newName) {
                         alert("هذا الاسم موجود بالفعل.");
@@ -799,6 +813,7 @@
         function scanAnswerKey() {
             isScanningForKey = true;
             showNotification('الرجاء تصوير ورقة الإجابة الصحيحة.', 'info');
+            showSection('correction');
             showCameraSection();
         }
 
@@ -809,7 +824,7 @@
             answersGrid.innerHTML = '';
             const options = Array.from({ length: optionsCount }, (_, i) => String.fromCharCode(65 + i));
             const modelName = document.getElementById('answerKeyModel').value;
-            const currentAnswers = answerKeyModels[modelName] || [];
+            const currentAnswers = answerKeyModels[modelName] ? answerKeyModels[modelName].answers : [];
 
             for (let i = 1; i <= questionCount; i++) {
                 answersGrid.innerHTML += `
@@ -827,7 +842,11 @@
             const modelName = document.getElementById('answerKeyModel').value;
             const questionCount = parseInt(document.getElementById('questionCount').value);
             correctAnswers = Array.from({ length: questionCount }, (_, i) => document.getElementById(`answer${i + 1}`).value);
-            answerKeyModels[modelName] = correctAnswers;
+            answerKeyModels[modelName] = {
+                name: modelName,
+                subject: document.getElementById('subjectName').value,
+                answers: correctAnswers
+            };
             localStorage.setItem('answerKeyModels', JSON.stringify(answerKeyModels));
             document.getElementById('examInfoSection').classList.remove('hidden');
             showNotification(`تم حفظ الإجابات لـ "${modelName}".`, 'success');
@@ -868,7 +887,7 @@
             if(autoCaptureTimer) clearInterval(autoCaptureTimer);
             document.getElementById('countdown').style.display = 'none';
             document.getElementById('cameraSection').classList.add('hidden');
-            // Do not show upload options automatically
+            document.getElementById('capturedSection').classList.add('hidden'); // Clean up captured image
         }
 
         function captureAndProcess() {
@@ -876,7 +895,15 @@
             const canvas = document.getElementById('canvas');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
-            stopCamera();
+            if (!isScanningForKey) {
+                 if (stream) {
+                    // Don't stop the camera, just reset the countdown for the next one.
+                    clearInterval(autoCaptureTimer);
+                    startAutoCapture();
+                 }
+            } else {
+                stopCamera();
+            }
             handleImageFile(canvas.toDataURL('image/jpeg'));
         }
 
@@ -888,7 +915,7 @@
         
         async function processAnswers() {
             const modelName = document.getElementById('answerKeyModel').value;
-            correctAnswers = answerKeyModels[modelName] || [];
+            correctAnswers = answerKeyModels[modelName] ? answerKeyModels[modelName].answers : [];
 
             if (correctAnswers.length === 0 && !isScanningForKey) {
                 showNotification('يرجى إعداد وحفظ الإجابات الصحيحة أولاً.', 'error'); return;
@@ -925,6 +952,7 @@
                     }
                     showNotification('تم مسح الإجابات بنجاح. يرجى مراجعتها ثم الحفظ.', 'success');
                     showManualEntry();
+                    showSection('answer-key');
 
                 } else {
                     studentAnswers = data.answers;
@@ -1034,8 +1062,13 @@
         function resetForNewSheet() {
             document.getElementById('resultsSection').classList.add('hidden');
             selectDifferentStudent();
-            document.getElementById('uploadOptions').classList.remove('hidden');
             showNotification('تم الحفظ! يمكنك الآن تصحيح ورقة جديدة.', 'success');
+            // If camera is still running, restart auto-capture for the next sheet.
+            if (stream) {
+                document.getElementById('capturedSection').classList.add('hidden');
+                document.getElementById('cameraSection').classList.remove('hidden');
+                startAutoCapture();
+            }
         }
 
         // === History Management ===
@@ -1117,7 +1150,7 @@
             multiCorrectionQueue = studentsList.filter(s => !s.corrected);
             if (multiCorrectionQueue.length === 0) { showNotification('لا توجد أوراق في انتظار التصحيح!', 'error'); return; }
             const modelName = document.getElementById('answerKeyModel').value;
-            if (!answerKeyModels[modelName] || answerKeyModels[modelName].length === 0) { showNotification('يرجى إعداد وحفظ الإجابات الصحيحة للنموذج الحالي أولاً!', 'error'); return; }
+            if (!answerKeyModels[modelName] || answerKeyModels[modelName].answers.length === 0) { showNotification('يرجى إعداد وحفظ الإجابات الصحيحة للنموذج الحالي أولاً!', 'error'); return; }
             isMultipleCorrectionMode = true; currentMultiIndex = 0; multiCorrectionResults = [];
             document.getElementById('multiCorrectionSetup').classList.add('hidden');
             document.getElementById('multiCorrectionActive').classList.remove('hidden');
