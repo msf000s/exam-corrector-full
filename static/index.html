@@ -271,7 +271,7 @@
                             <input type="text" id="subjectName" placeholder="مثال: رياضيات" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                     <button onclick="generateAnswerSheet()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">✏️ إعداد الإجابات يدوياً</button>
+                     <button onclick="showManualEntry()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">✏️ إعداد الإجابات يدوياً</button>
                      <button onclick="scanAnswerKey()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm ml-2">📷 تصوير نموذج محلول</button>
                      <button onclick="printBlankSheet()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm ml-2">🖨️ طباعة نموذج فارغ</button>
                      
@@ -470,18 +470,28 @@
             <section id="reports" class="app-section">
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">🖨️ التقارير والطباعة</h2>
-                    <div class="space-y-4">
+                    <div class="space-y-6">
                         <div class="bg-gray-50 p-4 rounded-lg">
-                            <h3 class="font-semibold text-lg text-gray-800 mb-2">تقرير أداء الفصل (قريباً)</h3>
-                            <p class="text-sm text-gray-600 mb-4">سيتم هنا إنشاء تقرير شامل يوضح متوسط أداء الطلاب، وأصعب الأسئلة، وأسهلها.</p>
-                            <button disabled class="bg-gray-400 text-white px-4 py-2 rounded-lg text-sm cursor-not-allowed">إنشاء تقرير</button>
+                            <h3 class="font-semibold text-lg text-gray-800 mb-2">تقرير أداء الفصل</h3>
+                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                <div>
+                                    <label for="reportClassFilter" class="block text-sm font-medium text-gray-700 mb-1">اختر الفصل:</label>
+                                    <select id="reportClassFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></select>
+                                </div>
+                                <div>
+                                    <label for="reportExamFilter" class="block text-sm font-medium text-gray-700 mb-1">اختر الاختبار:</label>
+                                    <select id="reportExamFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></select>
+                                </div>
+                                <div class="self-end">
+                                    <button onclick="generateClassReport()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">📊 إنشاء تقرير</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    <div id="report-container" class="mt-6"></div>
                 </div>
             </section>
-
         </main>
-        
     </div>
 
     <script>
@@ -535,13 +545,11 @@
             });
             document.querySelector(`.nav-link[href="#${sectionId}"]`).classList.add('active');
             
-            if (sectionId === 'correction') {
-                populateCorrectionStudentSelect();
-            }
-            if (sectionId !== 'correction') {
-                 document.getElementById('multipleCorrectionSection').classList.add('hidden');
-            }
-             if (window.innerWidth < 768) { // md breakpoint
+            if (sectionId === 'correction') populateCorrectionStudentSelect();
+            if (sectionId === 'reports') populateReportFilters();
+            if (sectionId !== 'correction') document.getElementById('multipleCorrectionSection').classList.add('hidden');
+            
+            if (window.innerWidth < 768) { // md breakpoint
                 toggleSidebar();
             }
         }
@@ -578,9 +586,7 @@
                 answerKeyModels['نموذج أ'] = { name: "نموذج أ", subject: "", answers: [] };
             }
             updateModelsDropdown();
-            if (studentsList.length > 0) {
-                displayStudentsList();
-            }
+            if (studentsList.length > 0) displayStudentsList();
             if (resultsHistory.length > 0) updateHistoryDisplay();
             if (detailedAnswersLog.length > 0) document.getElementById('detailedHistorySection').classList.remove('hidden');
         }
@@ -679,7 +685,6 @@
                         notificationMessage = 'لم يتم العثور على طلاب جدد (قد يكونون موجودين بالفعل في القائمة).';
                     }
 
-                    // Always display the list after an import attempt
                     displayStudentsList();
                     showNotification(notificationMessage, notificationType);
 
@@ -766,7 +771,6 @@
             });
         }
 
-
         function clearStudentsList() {
             if (confirm('هل أنت متأكد من حذف جميع الطلاب؟ سيتم حذف سجلات النتائج المرتبطة بهم أيضاً.')) {
                 studentsList = [];
@@ -776,9 +780,8 @@
                 localStorage.removeItem('examResults');
                 localStorage.removeItem('detailedAnswersLog');
                 
-                // Hide the list section and update UI
                 document.getElementById('studentsListSection').classList.add('hidden');
-                updateStudentsStats(); // This will show 0s
+                updateStudentsStats(); 
                 updateHistoryDisplay();
                 document.getElementById('detailedHistorySection').classList.add('hidden');
                 showNotification('تم مسح قائمة الطلاب وجميع السجلات.', 'success');
@@ -807,8 +810,7 @@
             correctAnswers = modelData.answers || [];
             document.getElementById('questionCount').value = correctAnswers.length || 10;
             document.getElementById('subjectName').value = modelData.subject || '';
-            generateAnswerSheet(); // Call generateAnswerSheet which will now show the manual entry
-            document.getElementById('answerSheet').classList.add('hidden'); // But hide it initially
+            document.getElementById('answerSheet').classList.add('hidden');
             showNotification(`تم التحويل إلى "${modelName}"`, 'info');
         }
 
@@ -822,7 +824,6 @@
                     newName = prompt("أدخل اسم النموذج الجديد (مثال: نموذج ب):");
                     if (newName && !answerKeyModels[newName]) {
                         answerKeyModels[newName] = { name: newName, subject: "", answers: [] };
-                        select.value = newName;
                     } else if (newName) {
                         alert("هذا الاسم موجود بالفعل.");
                     }
@@ -833,7 +834,6 @@
                     if (newName && newName !== currentName && !answerKeyModels[newName]) {
                         answerKeyModels[newName] = answerKeyModels[currentName];
                         delete answerKeyModels[currentName];
-                        select.value = newName;
                     } else if (newName) {
                         alert("لا يمكن التسمية باسم موجود بالفعل.");
                     }
@@ -854,7 +854,7 @@
 
         // === Answer Sheet Setup ===
         function showManualEntry() {
-            generateAnswerSheet(); // Generate and show
+            generateAnswerSheet();
         }
 
         function scanAnswerKey() {
@@ -1194,7 +1194,7 @@
              const uncorrected = studentsList.filter(s => !s.corrected);
              if (uncorrected.length === 0) { showNotification('جميع الطلاب تم تصحيح أوراقهم!', 'info'); return; }
              document.getElementById('multipleCorrectionSection').classList.toggle('hidden');
-             document.getElementById('currentStudentSection').classList.add('hidden');
+             selectDifferentStudent(); // Clear single selection
              showSection('correction');
         }
 
@@ -1293,6 +1293,121 @@
             document.getElementById('multiCorrectionReport').classList.add('hidden');
         }
         
+        // === Reports Section ===
+        function populateReportFilters() {
+            const classFilter = document.getElementById('reportClassFilter');
+            const examFilter = document.getElementById('reportExamFilter');
+
+            const uniqueClasses = [...new Set(resultsHistory.map(r => r.studentClass))].sort();
+            const uniqueExams = [...new Set(resultsHistory.map(r => r.examName))].sort();
+
+            classFilter.innerHTML = '<option value="">جميع الفصول</option>' + uniqueClasses.map(c => `<option value="${c}">${c}</option>`).join('');
+            examFilter.innerHTML = '<option value="">جميع الاختبارات</option>' + uniqueExams.map(e => `<option value="${e}">${e}</option>`).join('');
+        }
+        
+        function generateClassReport() {
+            const classFilter = document.getElementById('reportClassFilter').value;
+            const examFilter = document.getElementById('reportExamFilter').value;
+            const container = document.getElementById('report-container');
+
+            const filteredLogs = detailedAnswersLog.filter(log => 
+                (!classFilter || log.studentClass === classFilter) &&
+                (!examFilter || log.examName === examFilter)
+            );
+
+            if (filteredLogs.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500">لا توجد بيانات تطابق هذه الفلاتر لإنشاء تقرير.</p>`;
+                return;
+            }
+            
+            // Find the answer key for this exam
+            const firstLog = filteredLogs[0];
+            const modelName = Object.keys(answerKeyModels).find(key => 
+                (answerKeyModels[key].subject === firstLog.examName || key === firstLog.examName) && 
+                 answerKeyModels[key].answers.length === firstLog.answers.length
+            );
+            const reportCorrectAnswers = modelName ? answerKeyModels[modelName].answers : [];
+
+            // Calculate stats
+            const scores = filteredLogs.map(log => parseInt(log.percentage));
+            const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+            const maxScore = Math.max(...scores);
+            const minScore = Math.min(...scores);
+            
+            // Question analysis
+            const questionErrors = {};
+            if (reportCorrectAnswers.length > 0) {
+                for (let i = 0; i < reportCorrectAnswers.length; i++) {
+                    questionErrors[i + 1] = 0;
+                }
+                filteredLogs.forEach(log => {
+                    log.answers.forEach((studentAnswer, i) => {
+                        if (studentAnswer !== reportCorrectAnswers[i]) {
+                            questionErrors[i + 1]++;
+                        }
+                    });
+                });
+            }
+            
+            const sortedErrors = Object.entries(questionErrors).sort(([,a],[,b]) => b-a);
+            const hardestQuestions = sortedErrors.slice(0, 3).map(([q]) => q);
+            const easiestQuestions = sortedErrors.slice(-3).reverse().map(([q]) => q);
+
+            let reportHTML = `
+                <div id="printable-report" class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="text-center border-b pb-4 mb-4">
+                        <h3 class="text-2xl font-bold">تقرير أداء الفصل</h3>
+                        <p class="text-gray-600">${classFilter ? `للفصل: ${classFilter}`: 'لجميع الفصول'} - ${examFilter ? `اختبار: ${examFilter}` : 'لجميع الاختبارات'}</p>
+                    </div>
+                    
+                    <h4 class="text-lg font-bold mb-2">ملخص الأداء</h4>
+                    <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+                        <div class="bg-blue-100 p-3 rounded-lg"><div class="font-bold text-xl">${avgScore}%</div><div class="text-xs">متوسط الدرجات</div></div>
+                        <div class="bg-green-100 p-3 rounded-lg"><div class="font-bold text-xl">${maxScore}%</div><div class="text-xs">أعلى درجة</div></div>
+                        <div class="bg-red-100 p-3 rounded-lg"><div class="font-bold text-xl">${minScore}%</div><div class="text-xs">أقل درجة</div></div>
+                    </div>
+
+                    <h4 class="text-lg font-bold mb-2">تحليل الأسئلة</h4>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-red-50 p-3 rounded-lg">
+                            <h5 class="font-semibold mb-1">الأصعب (الأكثر خطأً)</h5>
+                            <p class="text-sm">${hardestQuestions.length > 0 ? 'الأسئلة رقم: ' + hardestQuestions.join(', ') : 'لا توجد بيانات كافية'}</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg">
+                            <h5 class="font-semibold mb-1">الأسهل (الأقل خطأً)</h5>
+                            <p class="text-sm">${easiestQuestions.length > 0 ? 'الأسئلة رقم: ' + easiestQuestions.join(', ') : 'لا توجد بيانات كافية'}</p>
+                        </div>
+                    </div>
+
+                    <h4 class="text-lg font-bold mb-2">درجات الطلاب</h4>
+                    <ul class="space-y-2 max-h-48 overflow-y-auto">
+                        ${filteredLogs.map(log => `
+                            <li class="flex justify-between items-center bg-gray-50 p-2 rounded">
+                                <span>${log.studentName}</span>
+                                <span class="font-bold ${parseInt(log.percentage) >= 60 ? 'text-green-600' : 'text-red-600'}">${log.percentage} (${log.score})</span>
+                            </li>
+                        `).join('')}
+                    </ul>
+                    <div class="text-center mt-6">
+                        <button onclick="printReport()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة التقرير</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = reportHTML;
+        }
+        
+        function printReport() {
+            const reportContent = document.getElementById('printable-report').innerHTML;
+            const win = window.open('', 'Print', 'height=800,width=800');
+            win.document.write(`<html><head><title>تقرير الأداء</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${reportContent}</body></html>`);
+            win.document.close();
+            setTimeout(() => {
+                win.print();
+                win.close();
+            }, 500);
+        }
+
+
         function printBlankSheet() {
             const qCount = parseInt(document.getElementById('questionCount').value);
             const oCount = parseInt(document.getElementById('optionsCount').value);
