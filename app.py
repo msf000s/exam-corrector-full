@@ -10,12 +10,13 @@ app = Flask(__name__, static_folder='static')
 
 # Configure Gemini API key from environment variable
 try:
-    GOOGLE_API_KEY = os.environ.get("GEMINI_API_KEY")
+    GOOGLE_API_KEY = os.environ.get("GEMINI_AI_KEY")
     if not GOOGLE_API_KEY:
-        raise ValueError("GEMINI_API_KEY is not set in the environment variables")
+        raise ValueError("GEMINI_AI_KEY is not set in the environment variables")
     genai.configure(api_key=GOOGLE_API_KEY)
-    # Using the latest stable model to avoid "Model Not Found" errors
-    model = genai.GenerativeModel('gemini-1.5-pro-latest')
+    # --- التغيير هنا ---
+    # العودة إلى النموذج القياسي والمستقر لتحليل الصور والنصوص
+    model = genai.GenerativeModel('gemini-pro-vision')
 except Exception as e:
     print(f"Error during Gemini initialization: {e}")
     model = None
@@ -51,7 +52,7 @@ Use "Blank" if no option is shaded for a question. In Arabic, this is "فراغ"
 Do not write any explanation or extra text. Only the list.
         """.strip()
 
-        # The model 'gemini-1.5-pro-latest' is multimodal and handles image/text input.
+        # The model 'gemini-pro-vision' is multimodal and handles image/text input.
         response = model.generate_content([prompt, img])
 
         if not response.text:
