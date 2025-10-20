@@ -271,17 +271,11 @@
                             <input type="text" id="subjectName" placeholder="مثال: رياضيات" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                     <button onclick="generateAnswerSheet()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">تحديث شكل النموذج</button>
+                     <button onclick="generateAnswerSheet()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">✏️ إعداد الإجابات يدوياً</button>
+                     <button onclick="scanAnswerKey()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm ml-2">📷 تصوير نموذج محلول</button>
+                     <button onclick="printBlankSheet()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm ml-2">🖨️ طباعة نموذج فارغ</button>
                      
-                    <div class="mt-6 pt-4 border-t">
-                         <h3 class="text-lg font-bold text-gray-800 mb-3">طريقة إدخال الإجابات الصحيحة:</h3>
-                         <div class="flex flex-col sm:flex-row gap-4">
-                            <button onclick="showManualEntry()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2">✏️ إدخال يدوي</button>
-                            <button onclick="scanAnswerKey()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2">📷 تصوير نموذج محلول</button>
-                        </div>
-                    </div>
-
-                    <div id="answerSheet" class="hidden mt-4">
+                    <div id="answerSheet" class="hidden mt-6 pt-4 border-t">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">📝 أدخل الإجابات الصحيحة يدوياً:</h3>
                         <div id="answersGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4"></div>
                         <button onclick="saveCorrectAnswers()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">حفظ الإجابات</button>
@@ -491,6 +485,7 @@
     </div>
 
     <script>
+        // Global state variables
         let correctAnswers = [];
         let studentAnswers = [];
         let stream = null;
@@ -498,17 +493,30 @@
         let autoCaptureTimer = null;
         let isScanningForKey = false;
         
-        let studentsList = JSON.parse(localStorage.getItem('studentsList') || '[]');
-        let resultsHistory = JSON.parse(localStorage.getItem('examResults') || '[]');
-        let detailedAnswersLog = JSON.parse(localStorage.getItem('detailedAnswersLog') || '[]');
-        let answerKeyModels = JSON.parse(localStorage.getItem('answerKeyModels') || '{}');
+        // Data loaded from localStorage
+        let studentsList = [];
+        let resultsHistory = [];
+        let detailedAnswersLog = [];
+        let answerKeyModels = {};
         
+        // Multi-correction state
         let isMultipleCorrectionMode = false;
         let multiCorrectionQueue = [];
         let currentMultiIndex = 0;
         let multiCorrectionResults = [];
 
-        // === Navigation & UI ===
+        // === Safe localStorage Parsing ===
+        function getFromStorage(key, defaultValue) {
+            try {
+                const storedValue = localStorage.getItem(key);
+                return storedValue ? JSON.parse(storedValue) : defaultValue;
+            } catch (e) {
+                console.error(`Error parsing ${key} from localStorage:`, e);
+                return defaultValue;
+            }
+        }
+
+        // === Navigation & UI Initialization ===
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebar-overlay');
@@ -561,11 +569,18 @@
         });
 
         function loadInitialUI() {
+            studentsList = getFromStorage('studentsList', []);
+            resultsHistory = getFromStorage('examResults', []);
+            detailedAnswersLog = getFromStorage('detailedAnswersLog', []);
+            answerKeyModels = getFromStorage('answerKeyModels', {});
+
             if (Object.keys(answerKeyModels).length === 0) {
                 answerKeyModels['نموذج أ'] = { name: "نموذج أ", subject: "", answers: [] };
             }
             updateModelsDropdown();
-            if (studentsList.length > 0) displayStudentsList();
+            if (studentsList.length > 0) {
+                displayStudentsList();
+            }
             if (resultsHistory.length > 0) updateHistoryDisplay();
             if (detailedAnswersLog.length > 0) document.getElementById('detailedHistorySection').classList.remove('hidden');
         }
@@ -788,11 +803,12 @@
         function switchModel() {
             const modelName = document.getElementById('answerKeyModel').value;
             if (!modelName) return;
-            const modelData = answerKeyModels[modelName];
+            const modelData = answerKeyModels[modelName] || {};
             correctAnswers = modelData.answers || [];
             document.getElementById('questionCount').value = correctAnswers.length || 10;
             document.getElementById('subjectName').value = modelData.subject || '';
-            generateAnswerSheet();
+            generateAnswerSheet(); // Call generateAnswerSheet which will now show the manual entry
+            document.getElementById('answerSheet').classList.add('hidden'); // But hide it initially
             showNotification(`تم التحويل إلى "${modelName}"`, 'info');
         }
 
@@ -838,7 +854,7 @@
 
         // === Answer Sheet Setup ===
         function showManualEntry() {
-            document.getElementById('answerSheet').classList.remove('hidden');
+            generateAnswerSheet(); // Generate and show
         }
 
         function scanAnswerKey() {
@@ -849,14 +865,14 @@
         }
 
         function generateAnswerSheet() {
-            document.getElementById('answerSheet').classList.remove('hidden');
             const questionCount = parseInt(document.getElementById('questionCount').value);
             const optionsCount = parseInt(document.getElementById('optionsCount').value);
             const answersGrid = document.getElementById('answersGrid');
             answersGrid.innerHTML = '';
             const options = Array.from({ length: optionsCount }, (_, i) => String.fromCharCode(65 + i));
             const modelName = document.getElementById('answerKeyModel').value;
-            const currentAnswers = answerKeyModels[modelName] ? answerKeyModels[modelName].answers : [];
+            const modelData = answerKeyModels[modelName] || {};
+            const currentAnswers = modelData.answers || [];
 
             for (let i = 1; i <= questionCount; i++) {
                 answersGrid.innerHTML += `
@@ -868,6 +884,7 @@
                     </div>
                 `;
             }
+            document.getElementById('answerSheet').classList.remove('hidden');
         }
 
         function saveCorrectAnswers() {
@@ -1341,19 +1358,23 @@
             win.document.close();
 
              setTimeout(() => { // Delay to ensure DOM is ready
-                const qrData = JSON.stringify({
-                    subject: subjectName,
-                    model: modelName,
-                    questions: qCount
-                });
+                if (win.QRCode) {
+                    const qrData = JSON.stringify({
+                        subject: subjectName,
+                        model: modelName,
+                        questions: qCount
+                    });
 
-                new win.QRCode(win.document.getElementById("qrcode-container"), {
-                    text: qrData,
-                    width: 80,
-                    height: 80,
-                    correctLevel : win.QRCode.CorrectLevel.H
-                });
-
+                    new win.QRCode(win.document.getElementById("qrcode-container"), {
+                        text: qrData,
+                        width: 80,
+                        height: 80,
+                        correctLevel : win.QRCode.CorrectLevel.H
+                    });
+                } else {
+                    console.error("QRCode library failed to load in the print window.");
+                    win.document.getElementById("qrcode-container").innerText = "QR Error";
+                }
                 win.focus();
              }, 500);
         }
