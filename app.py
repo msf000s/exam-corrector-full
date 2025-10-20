@@ -6,7 +6,6 @@ import json
 import re
 
 # Initialize Flask app
-# The static_folder is set to 'static' to serve the new advanced frontend.
 app = Flask(__name__, static_folder='static')
 
 # Configure Gemini API key from environment variable
@@ -15,7 +14,9 @@ try:
     if not GOOGLE_API_KEY:
         raise ValueError("GEMINI_API_KEY is not set in the environment variables")
     genai.configure(api_key=GOOGLE_API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    # --- التغيير هنا ---
+    # تم تحديث اسم النموذج إلى النموذج الصحيح لتحليل الصور
+    model = genai.GenerativeModel('gemini-pro-vision')
 except Exception as e:
     print(f"Error during Gemini initialization: {e}")
     model = None
@@ -26,7 +27,6 @@ def serve_frontend():
     return send_from_directory(app.static_folder, 'index.html')
 
 # API endpoint for processing the answer sheet
-# This endpoint is called by the JavaScript in your new index.html file.
 @app.route('/api/correct', methods=['POST'])
 def correct_answers():
     if model is None:
@@ -37,13 +37,11 @@ def correct_answers():
             return jsonify({"success": False, "error": "No image was uploaded"}), 400
 
         image_file = request.files['image']
-        # The frontend sends these values, so we read them from the form.
         num_questions = int(request.form.get('num_questions', 10))
         options_per_q = int(request.form.get('options_per_q', 4))
 
         img = Image.open(image_file.stream)
 
-        # The prompt is tailored to get a clean JSON response from Gemini.
         options_str = "A, B, C, D" if options_per_q == 4 else "A, B, C, D, E"
         prompt = f"""
 This is an image of a multiple-choice test answer sheet.
@@ -54,6 +52,7 @@ Use "Blank" if no option is shaded for a question. In Arabic, this is "فراغ"
 Do not write any explanation or extra text. Only the list.
         """.strip()
 
+        # For gemini-pro-vision, the prompt and image are sent together in a list
         response = model.generate_content([prompt, img])
 
         if not response.text:
@@ -61,7 +60,6 @@ Do not write any explanation or extra text. Only the list.
 
         raw_text = response.text.strip()
         
-        # Clean the text to reliably extract the JSON list.
         if raw_text.startswith("```json"):
             raw_text = raw_text[7:-3].strip()
         elif raw_text.startswith("```"):
@@ -69,8 +67,6 @@ Do not write any explanation or extra text. Only the list.
 
         answers = None
         try:
-            # The frontend expects "فراغ" for blank answers.
-            # We replace the English "Blank" from the model with the Arabic "فراغ".
             cleaned_text = raw_text.replace('"Blank"', '"فراغ"')
             answers = json.loads(cleaned_text)
         except json.JSONDecodeError:
