@@ -15,8 +15,8 @@ try:
         raise ValueError("GEMINI_API_KEY is not set in the environment variables")
     genai.configure(api_key=GOOGLE_API_KEY)
     # --- التغيير هنا ---
-    # تم تحديث اسم النموذج إلى النموذج الصحيح لتحليل الصور
-    model = genai.GenerativeModel('gemini-pro-vision')
+    # تم التحديث إلى أحدث نموذج مستقر لتجنب أخطاء "Model Not Found"
+    model = genai.GenerativeModel('gemini-1.5-pro-latest')
 except Exception as e:
     print(f"Error during Gemini initialization: {e}")
     model = None
@@ -52,7 +52,7 @@ Use "Blank" if no option is shaded for a question. In Arabic, this is "فراغ"
 Do not write any explanation or extra text. Only the list.
         """.strip()
 
-        # For gemini-pro-vision, the prompt and image are sent together in a list
+        # The model 'gemini-1.5-pro-latest' is multimodal and handles image/text input.
         response = model.generate_content([prompt, img])
 
         if not response.text:
