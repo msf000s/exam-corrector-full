@@ -270,12 +270,30 @@
                         </div>
                         <div>
                             <label for="subjectName" class="block text-sm font-medium text-gray-700 mb-2">المادة:</label>
-                            <input type="text" id="subjectName" placeholder="مثال: رياضيات" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" oninput="document.getElementById('examName').value = this.value">
+                            <input type="text" id="subjectName" placeholder="مثال: رياضيات" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                     </div>
-                     <button onclick="showManualEntry()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">✏️ إعداد الإجابات يدوياً</button>
-                     <button onclick="scanAnswerKey()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm ml-2">📷 تصوير نموذج محلول</button>
+
+                    <div id="examInfoSection" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                         <div>
+                            <label for="examName" class="block text-sm font-medium text-gray-700 mb-2">اسم الاختبار:</label>
+                            <input type="text" id="examName" placeholder="مثال: الاختبار الفصلي الأول" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="examDate" class="block text-sm font-medium text-gray-700 mb-2">تاريخ الاختبار:</label>
+                            <input type="date" id="examDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
                      
+                    <div class="mt-4 pt-4 border-t">
+                         <h3 class="text-lg font-bold text-gray-800 mb-3">إجراءات النموذج</h3>
+                         <div class="flex flex-wrap gap-2">
+                            <button onclick="showManualEntry()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">✏️ إعداد الإجابات يدوياً</button>
+                            <button onclick="scanAnswerKey()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📷 تصوير نموذج محلول</button>
+                            <button onclick="printBlankSheet()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🖨️ طباعة نموذج فارغ</button>
+                        </div>
+                    </div>
+
                     <div id="answerSheet" class="hidden mt-6 pt-4 border-t">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">📝 أدخل الإجابات الصحيحة يدوياً:</h3>
                         <div id="answersGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4"></div>
@@ -364,47 +382,21 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- الصورة الملتقطة والمعالجة -->
-                <div id="capturedSection" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">🖼️ الصورة الملتقطة:</h3>
-                    <img id="capturedImage" class="w-full max-w-md mx-auto rounded-lg shadow-md mb-4">
-                    <div class="text-center">
-                        <button onclick="processAnswers()" id="processBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">
-                            <span id="processBtnSpinner" class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                            <span id="processBtnText">🔍 تحليل الإجابات</span>
-                        </button>
-                    </div>
+                
+                <!-- الصورة الملتقطة وقائمة التأكيد -->
+                <div id="verificationContainer" class="hidden bg-white rounded-xl shadow-lg p-6 mb-8">
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">🖼️ الصورة الملتقطة</h3>
+                             <img id="capturedImage" class="w-full rounded-lg shadow-md">
+                        </div>
+                        <div id="verificationSection">
+                            <h3 class="text-xl font-bold text-gray-800 mb-4">🔍 تأكيد الإجابات</h3>
+                            <div id="verificationGrid" class="grid grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2"></div>
+                             <button onclick="confirmAnswers()" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">✅ تأكيد وحساب النتيجة</button>
+                        </div>
+                     </div>
                 </div>
-
-                <!-- بيانات الاختبار وقائمة التأكيد -->
-                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                    <div id="examInfoSection" class="mb-4">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">ℹ️ بيانات الاختبار (اختياري)</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div>
-                                <label for="examName" class="block text-sm font-medium text-gray-700 mb-2">اسم الاختبار:</label>
-                                <input type="text" id="examName" placeholder="مثال: رياضيات - الفصل الأول" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            </div>
-                            <div>
-                                <label for="examDate" class="block text-sm font-medium text-gray-700 mb-2">تاريخ الاختبار:</label>
-                                <input type="date" id="examDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="verificationSection" class="hidden pt-4 border-t">
-                        <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">🔍 تأكيد الإجابات المقروءة</h3>
-                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-                            <p class="text-sm text-yellow-700">يرجى مراجعة الإجابات والتعديل يدوياً إذا لزم الأمر.</p>
-                        </div>
-                        <div id="verificationGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6"></div>
-                        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button onclick="confirmAnswers()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">✅ تأكيد وحساب النتيجة</button>
-                        </div>
-                    </div>
-                </div>
-
 
                 <!-- نتائج التصحيح -->
                 <div id="resultsSection" class="bg-white rounded-xl shadow-lg p-6 hidden result-animation">
@@ -548,7 +540,6 @@
             </section>
 
         </main>
-        
     </div>
 
     <script>
@@ -615,7 +606,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('examDate').valueAsDate = new Date();
             document.getElementById('studentsFileInput').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) parseStudentsFile(file);
@@ -632,6 +622,8 @@
                     selectDifferentStudent();
                 }
              });
+             document.getElementById('examDate').valueAsDate = new Date();
+
 
             loadInitialUI();
         });
@@ -646,7 +638,7 @@
             loadSettings();
 
             if (Object.keys(answerKeyModels).length === 0) {
-                answerKeyModels['نموذج أ'] = { name: "نموذج أ", subject: "", answers: [] };
+                answerKeyModels['نموذج أ'] = { name: "نموذج أ", subject: "", examName: "", examDate: "", answers: [] };
             }
             updateModelsDropdown();
             if (studentsList.length > 0) displayStudentsList();
@@ -680,8 +672,7 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 document.getElementById('capturedImage').src = e.target.result;
-                document.getElementById('capturedSection').classList.remove('hidden');
-                 processAnswers();
+                processAnswers();
             };
             if (typeof file === 'string') {
                  reader.readAsDataURL(dataURItoBlob(file));
@@ -866,13 +857,13 @@
 
         function switchModel() {
             const modelName = document.getElementById('answerKeyModel').value;
-            if (!modelName) return;
-            const modelData = answerKeyModels[modelName] || {};
+            if (!modelName || !answerKeyModels[modelName]) return;
+            const modelData = answerKeyModels[modelName];
             correctAnswers = modelData.answers || [];
             document.getElementById('questionCount').value = correctAnswers.length || 10;
-            const subject = modelData.subject || '';
-            document.getElementById('subjectName').value = subject;
-            document.getElementById('examName').value = subject; // Link subject to exam name
+            document.getElementById('subjectName').value = modelData.subject || '';
+            document.getElementById('examName').value = modelData.examName || '';
+            document.getElementById('examDate').value = modelData.examDate || new Date().toISOString().split('T')[0];
             document.getElementById('answerSheet').classList.add('hidden');
             showNotification(`تم التحويل إلى "${modelName}"`, 'info');
         }
@@ -886,7 +877,7 @@
                 case 'new':
                     newName = prompt("أدخل اسم النموذج الجديد (مثال: نموذج ب):");
                     if (newName && !answerKeyModels[newName]) {
-                        answerKeyModels[newName] = { name: newName, subject: "", answers: [] };
+                        answerKeyModels[newName] = { name: newName, subject: "", examName: "", examDate: new Date().toISOString().split('T')[0], answers: [] };
                     } else if (newName) {
                         alert("هذا الاسم موجود بالفعل.");
                     }
@@ -952,15 +943,17 @@
 
         function saveCorrectAnswers() {
             const modelName = document.getElementById('answerKeyModel').value;
+            if (!modelName) return;
             const questionCount = parseInt(document.getElementById('questionCount').value);
             correctAnswers = Array.from({ length: questionCount }, (_, i) => document.getElementById(`answer${i + 1}`).value);
             answerKeyModels[modelName] = {
                 name: modelName,
                 subject: document.getElementById('subjectName').value,
+                examName: document.getElementById('examName').value,
+                examDate: document.getElementById('examDate').value,
                 answers: correctAnswers
             };
             localStorage.setItem('answerKeyModels', JSON.stringify(answerKeyModels));
-            document.getElementById('examInfoSection').classList.remove('hidden');
             document.getElementById('answerSheet').classList.add('hidden');
             showNotification(`تم حفظ الإجابات لـ "${modelName}".`, 'success');
         }
@@ -1068,7 +1061,6 @@
                 } else {
                     studentAnswers = data.answers;
                     showAnswerVerification();
-                    // Do not hide the captured section here
                 }
             } catch (err) {
                 showNotification(`فشل تحليل الصورة: ${err.message}`, 'error');
@@ -1101,7 +1093,7 @@
         function confirmAnswers() {
             studentAnswers = Array.from({ length: correctAnswers.length }, (_, i) => document.getElementById(`verify${i}`).value);
             document.getElementById('verificationSection').classList.add('hidden');
-            document.getElementById('capturedSection').classList.add('hidden'); // Hide image after confirmation
+            document.getElementById('capturedSection').classList.add('hidden');
             displayResults();
         }
 
@@ -1126,10 +1118,13 @@
             document.getElementById('scorePercentage').textContent = `${percentage}%`;
             document.getElementById('letterGrade').textContent = getLetterGrade(percentage);
             const studentForDisplay = isMultipleCorrectionMode ? multiCorrectionQueue[currentMultiIndex] : currentStudent;
+            const modelName = document.getElementById('answerKeyModel').value;
+            const modelData = answerKeyModels[modelName] || {};
+
             document.getElementById('resultStudentName').textContent = studentForDisplay.name;
             document.getElementById('resultStudentClass').textContent = studentForDisplay.class;
-            document.getElementById('resultExamName').textContent = document.getElementById('examName').value || 'غير محدد';
-            document.getElementById('resultExamDate').textContent = document.getElementById('examDate').value;
+            document.getElementById('resultExamName').textContent = modelData.examName || 'غير محدد';
+            document.getElementById('resultExamDate').textContent = modelData.examDate || '';
             document.getElementById('resultsSection').classList.remove('hidden');
         }
 
@@ -1145,9 +1140,11 @@
             const studentForHistory = isMultipleCorrectionMode ? multiCorrectionQueue[currentMultiIndex] : currentStudent;
             const correctCount = parseInt(document.getElementById('correctCount').textContent);
             const totalQuestions = correctAnswers.length;
+            const modelName = document.getElementById('answerKeyModel').value;
+            const modelData = answerKeyModels[modelName] || {};
             const result = {
                 id: Date.now(), studentName: studentForHistory.name, studentClass: studentForHistory.class,
-                examName: document.getElementById('examName').value || 'غير محدد', examDate: document.getElementById('examDate').value,
+                examName: modelData.examName || 'غير محدد', examDate: modelData.examDate || '',
                 score: `${correctCount}/${totalQuestions}`, percentage: document.getElementById('scorePercentage').textContent, grade: document.getElementById('letterGrade').textContent,
             };
             const detailedResult = { ...result, answers: studentAnswers };
@@ -1456,7 +1453,7 @@
                     
                     <div class="flex justify-center gap-4">
                         <button onclick="generateQuestionAnalysisReport()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">تحليل مفصل للأسئلة</button>
-                        <button onclick="printReport('${classFilter}', '${examFilter}')" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة التقرير</button>
+                        <button onclick="printReport()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة التقرير</button>
                     </div>
                 </div>
             `;
@@ -1533,45 +1530,40 @@
             reportHTML += `
                     </div>
                     <div class="text-center mt-6">
-                        <button onclick="printReportAnalysis()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة تحليل الأسئلة</button>
+                        <button onclick="printContent('printable-analysis-report', 'تحليل الأسئلة')" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة تحليل الأسئلة</button>
                     </div>
                 </div>
             `;
              document.getElementById('report-container').innerHTML += reportHTML;
         }
         
-        function printReport(classFilter, examFilter) {
-            const filteredLogs = detailedAnswersLog.filter(log => 
-                (!classFilter || log.studentClass === classFilter) &&
-                (!examFilter || log.examName === examFilter)
-            );
-            const studentListHTML = filteredLogs.map(log => `
-                <tr class="border-b">
-                    <td class="p-2">${log.studentName}</td>
-                    <td class="p-2 text-center">${log.score}</td>
-                    <td class="p-2 text-center">${log.percentage}</td>
-                </tr>
-            `).join('');
-
-            const reportContent = document.getElementById('printable-report').cloneNode(true);
-            reportContent.querySelector('ul').outerHTML = `
-                <table class="w-full text-sm mt-4">
-                    <thead><tr class="border-b-2 border-black"><th class="p-2 text-right">اسم الطالب</th><th class="p-2">الدرجة</th><th class="p-2">النسبة</th></tr></thead>
-                    <tbody>${studentListHTML}</tbody>
-                </table>
-            `;
-            reportContent.querySelector('button').remove();
-            
-            const win = window.open('', 'Print', 'height=800,width=800');
-            win.document.write(`<html><head><title>تقرير الأداء</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${reportContent.innerHTML}</body></html>`);
-            win.document.close();
-            setTimeout(() => { win.print(); win.close(); }, 500);
+        function printReport() {
+             const reportContent = document.getElementById('printable-report').cloneNode(true);
+             const buttons = reportContent.querySelectorAll('button');
+             buttons.forEach(btn => btn.remove());
+             printContent(reportContent.innerHTML, 'تقرير الأداء');
         }
 
-        function printReportAnalysis() {
-            const reportContent = document.getElementById('printable-analysis-report').innerHTML;
+        function printContent(content, title) {
+            const settings = getFromStorage('appSettings', {});
+            const classFilter = document.getElementById('reportClassFilter').value;
+            const examFilter = document.getElementById('reportExamFilter').value;
+
+            const headerInfo = `
+                <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+                    <p>${settings.admin || ''}</p>
+                    <p>${settings.school || ''}</p>
+                    <h1 style="font-size: 1.5rem; font-weight: bold; margin: 5px 0;">${title}</h1>
+                    <div style="font-size: 0.9rem; color: #555;">
+                        <span>${classFilter ? `الفصل: ${classFilter}`: ''}</span>
+                        <span>${examFilter ? ` | اختبار: ${examFilter}` : ''}</span>
+                    </div>
+                </div>
+            `;
+
+            const fullContent = headerInfo + content;
             const win = window.open('', 'Print', 'height=800,width=800');
-            win.document.write(`<html><head><title>تحليل الأسئلة</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${reportContent}</body></html>`);
+            win.document.write(`<html><head><title>${title}</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${fullContent}</body></html>`);
             win.document.close();
             setTimeout(() => { win.print(); win.close(); }, 500);
         }
@@ -1583,6 +1575,8 @@
             const options = Array.from({ length: oCount }, (_, i) => String.fromCharCode(65 + i));
             const subjectName = document.getElementById('subjectName').value || 'غير محدد';
             const modelName = document.getElementById('answerKeyModel').value.replace('نموذج ', '');
+            const examName = document.getElementById('examName').value || 'غير محدد';
+            const examDate = document.getElementById('examDate').value || '';
             const splitPoint = Math.ceil(qCount / 2);
 
             let col1 = '';
@@ -1639,6 +1633,8 @@
                     <div class="info">
                         <div class="info-item"><strong>اسم الطالب:</strong></div>
                         <div class="info-item"><strong>الفصل:</strong></div>
+                        <div class="info-item"><strong>اسم الاختبار:</strong> ${examName}</div>
+                        <div class="info-item"><strong>التاريخ:</strong> ${examDate}</div>
                     </div>
                     <div class="columns-container">
                         <div class="column">${col1}</div>
@@ -1655,7 +1651,7 @@
 
              setTimeout(() => { 
                 if (win.QRCode) {
-                    const qrData = JSON.stringify({ subject: subjectName, model: modelName, questions: qCount });
+                    const qrData = JSON.stringify({ subject: subjectName, model: modelName, questions: qCount, examName: examName, examDate: examDate });
                     new win.QRCode(win.document.getElementById("qrcode-container"), { text: qrData, width: 80, height: 80, correctLevel : win.QRCode.CorrectLevel.H });
                 }
                 win.focus();
