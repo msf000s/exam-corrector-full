@@ -212,20 +212,17 @@
                                 <div>
                                     <label for="searchStudentName" class="block text-sm font-medium text-gray-700 mb-1">البحث بالاسم:</label>
                                     <input type="text" id="searchStudentName" placeholder="جزء من اسم الطالب..." 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                           onkeyup="filterStudentsList()">
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <div>
                                     <label for="filterClass" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالفصل:</label>
-                                    <select id="filterClass" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                            onchange="filterStudentsList()">
+                                    <select id="filterClass" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                                         <option value="">جميع الفصول</option>
                                     </select>
                                 </div>
                                 <div>
                                     <label for="filterStatus" class="block text-sm font-medium text-gray-700 mb-1">حالة التصحيح:</label>
-                                    <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                            onchange="filterStudentsList()">
+                                    <select id="filterStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                                         <option value="">الكل</option>
                                         <option value="corrected">تم التصحيح</option>
                                         <option value="pending">في الانتظار</option>
@@ -655,6 +652,10 @@
                     selectDifferentStudent();
                 }
              });
+             
+             document.getElementById('subjectName').addEventListener('input', (e) => {
+                document.getElementById('examName').value = e.target.value;
+             });
 
             // Button listeners
             document.getElementById('multiCorrectionBtn').addEventListener('click', toggleMultipleCorrection);
@@ -684,9 +685,7 @@
             document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
             document.getElementById('backupBtn').addEventListener('click', backupData);
             document.getElementById('clearAllDataBtn').addEventListener('click', clearAllData);
-            document.getElementById('subjectName').addEventListener('input', () => {
-                document.getElementById('examName').value = document.getElementById('subjectName').value;
-            });
+            document.getElementById('examDate').valueAsDate = new Date();
 
 
             loadInitialUI();
@@ -863,12 +862,6 @@
             `).join('');
         }
         
-        document.getElementById('studentsList').addEventListener('click', (e) => {
-            if (e.target.classList.contains('select-student-btn')) {
-                selectStudent(parseInt(e.target.dataset.id));
-            }
-        });
-
         function selectStudent(studentId) {
             currentStudent = studentsList.find(s => s.id === parseInt(studentId));
             if (currentStudent) {
@@ -1452,10 +1445,11 @@
             }
             
             const firstLog = filteredLogs[0];
-            const modelName = Object.keys(answerKeyModels).find(key => 
-                (answerKeyModels[key].subject === firstLog.examName || key === firstLog.examName) && 
-                 answerKeyModels[key].answers.length === firstLog.answers.length
-            );
+            const modelName = Object.keys(answerKeyModels).find(key => {
+                const model = answerKeyModels[key];
+                return (model.examName === firstLog.examName) && 
+                       (model.answers && model.answers.length === firstLog.answers.length);
+            });
             const reportCorrectAnswers = modelName ? answerKeyModels[modelName].answers : [];
 
             const scores = filteredLogs.map(log => parseInt(log.percentage));
@@ -1519,10 +1513,8 @@
             const examFilter = document.getElementById('reportExamFilter').value;
             const title = `تقرير أداء ${examFilter || 'الاختبار'}`;
             
-            const reportContentEl = document.getElementById('report-container').cloneNode(true);
-            const reportButton = reportContentEl.querySelector('button');
-            if(reportButton) reportButton.remove();
-
+            let reportContent = document.getElementById('printable-report').innerHTML;
+            
             const studentLogs = detailedAnswersLog.filter(log => 
                 (!classFilter || log.studentClass === classFilter) &&
                 (!examFilter || log.examName === examFilter)
@@ -1537,7 +1529,7 @@
                 </tr>
             `).join('');
 
-            const chartImage = await getReportChartsAsImages();
+            const chartImage = await getReportChartsAsImages(studentLogs);
 
             const studentTable = `
                 <h4 class="text-lg font-bold mt-6 mb-2">درجات الطلاب</h4>
@@ -1549,9 +1541,9 @@
                 <img src="${chartImage}" class="mx-auto" style="max-width: 300px;"/>
             `;
             
-            reportContentEl.innerHTML += studentTable;
+            reportContent += studentTable;
 
-            printContent(reportContentEl.innerHTML, title);
+            printContent(reportContent, title);
         }
 
         function printContent(content, title) {
@@ -1569,7 +1561,6 @@
                     <div style="font-size: 0.9rem; color: #555;">
                         <span>${classFilter ? `الفصل: ${classFilter}`: ''}</span>
                         <span>${examFilter ? ` | اختبار: ${examFilter}` : ''}</span>
-                        <p class="mt-2">المعلم: ${settings.teacher || ''} | مدير المدرسة: ${settings.director || ''}</p>
                     </div>
                 </div>
             `;
@@ -1800,5 +1791,49 @@
                 classPerformances[r.studentClass].total += parseInt(r.percentage);
                 classPerformances[r.studentClass].count++;
             });
-            const class
+            const classLabels = Object.keys(classPerformances).sort();
+            const classAverages = classLabels.map(c => Math.round(classPerformances[c].total / classPerformances[c].count));
+            classChart = new Chart(classCtx, {
+                type: 'bar',
+                data: {
+                    labels: classLabels,
+                    datasets: [{
+                        label: 'متوسط الدرجات',
+                        data: classAverages,
+                        backgroundColor: '#4f46e5',
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+        }
+        
+        async function getReportChartsAsImages(logs) {
+            const offscreenCanvas = document.createElement('canvas');
+            offscreenCanvas.width = 400;
+            offscreenCanvas.height = 200;
+            const gradeCounts = { 'ممتاز': 0, 'جيد جداً': 0, 'جيد': 0, 'مقبول': 0, 'ضعيف': 0 };
+            logs.forEach(r => { if(gradeCounts[r.grade] !== undefined) gradeCounts[r.grade]++; });
+
+            return new Promise((resolve) => {
+                new Chart(offscreenCanvas.getContext('2d'), {
+                     type: 'pie',
+                    data: {
+                        labels: Object.keys(gradeCounts),
+                        datasets: [{ data: Object.values(gradeCounts), backgroundColor: ['#22c55e', '#84cc16', '#facc15', '#fb923c', '#ef4444'], }]
+                    },
+                    options: {
+                        responsive: false,
+                        animation: {
+                            onComplete: (animation) => {
+                                resolve(animation.chart.toBase64Image());
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+    </script>
+</body>
+</html>
 
