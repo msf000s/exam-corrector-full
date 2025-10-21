@@ -681,8 +681,6 @@
             reader.onload = (e) => {
                 document.getElementById('capturedImage').src = e.target.result;
                 document.getElementById('capturedSection').classList.remove('hidden');
-                document.getElementById('uploadSection').classList.add('hidden');
-                document.getElementById('cameraSection').classList.add('hidden');
                  processAnswers();
             };
             if (typeof file === 'string') {
@@ -1231,32 +1229,14 @@
 
         function exportDetailedAnswersLog() {
             if (detailedAnswersLog.length === 0) { showNotification("لا يوجد سجل مفصل لتصديره.", "info"); return; }
-            const modelName = document.getElementById('answerKeyModel').value;
-            const modelAnswers = answerKeyModels[modelName] ? answerKeyModels[modelName].answers : [];
-
-            const maxQuestions = modelAnswers.length;
-            if (maxQuestions === 0) {
-                showNotification("يرجى التأكد من أن نموذج الإجابة المحدد يحتوي على إجابات.", "error");
-                return;
-            }
-
+            const maxQuestions = Math.max(...detailedAnswersLog.map(log => log.answers.length));
             const headers = ['اسم الطالب', 'الفصل', 'اسم الاختبار', 'التاريخ', 'الدرجة'];
-            for(let i=1; i<= maxQuestions; i++) { 
-                headers.push(`س${i}`);
-                headers.push(`درجة س${i}`);
-            }
-            
+            for(let i=1; i<= maxQuestions; i++) { headers.push(`س${i}`); }
             const data = detailedAnswersLog.map(log => {
                 const row = {'اسم الطالب': log.studentName, 'الفصل': log.studentClass, 'اسم الاختبار': log.examName, 'التاريخ': log.examDate, 'الدرجة': log.score };
-                for(let i=0; i < maxQuestions; i++) {
-                    const studentAnswer = log.answers[i] || "فراغ";
-                    const correctAnswer = modelAnswers[i];
-                    row[`س${i+1}`] = studentAnswer;
-                    row[`درجة س${i}`] = studentAnswer === correctAnswer ? 1 : 0;
-                }
+                log.answers.forEach((ans, i) => { row[`س${i+1}`] = ans; });
                 return row;
             });
-
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(data, {header: headers});
             XLSX.utils.book_append_sheet(wb, ws, 'سجل إجابات الطلاب');
