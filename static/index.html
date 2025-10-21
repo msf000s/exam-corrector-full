@@ -83,6 +83,8 @@
                 <a href="#correction" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('correction')">📷 التصحيح</a>
                 <a href="#history" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('history')">📚 السجلات</a>
                 <a href="#reports" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('reports')">🖨️ التقارير</a>
+                <a href="#stats" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('stats')">📈 الإحصائيات</a>
+                <a href="#settings" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('settings')">⚙️ الإعدادات</a>
             </nav>
         </aside>
 
@@ -273,7 +275,6 @@
                     </div>
                      <button onclick="showManualEntry()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">✏️ إعداد الإجابات يدوياً</button>
                      <button onclick="scanAnswerKey()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm ml-2">📷 تصوير نموذج محلول</button>
-                     <button onclick="printBlankSheet()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm ml-2">🖨️ طباعة نموذج فارغ</button>
                      
                     <div id="answerSheet" class="hidden mt-6 pt-4 border-t">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">📝 أدخل الإجابات الصحيحة يدوياً:</h3>
@@ -493,7 +494,61 @@
                     <div id="report-container" class="mt-6"></div>
                 </div>
             </section>
+            
+            <!-- Section: Stats -->
+            <section id="stats" class="app-section">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                     <h2 class="text-2xl font-bold text-gray-800 mb-4">📈 الإحصائيات العامة</h2>
+                     <div id="stats-container" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <!-- Stats will be populated here by JS -->
+                     </div>
+                </div>
+            </section>
+
+            <!-- Section: Settings -->
+            <section id="settings" class="app-section">
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">⚙️ الإعدادات</h2>
+                    <div class="space-y-6">
+
+                        <!-- Basic Info -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-lg text-gray-800 mb-4">البيانات الأساسية للتقارير</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input id="setting-admin" type="text" placeholder="إدارة التعليم" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input id="setting-school" type="text" placeholder="المدرسة" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input id="setting-teacher" type="text" placeholder="المعلم" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input id="setting-director" type="text" placeholder="المدير" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input id="setting-year" type="text" placeholder="العام الدراسي" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                                <input id="setting-semester" type="text" placeholder="الفصل الدراسي" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                            </div>
+                            <button onclick="saveSettings()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">حفظ البيانات الأساسية</button>
+                        </div>
+                        
+                        <!-- Data Management -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                             <h3 class="font-semibold text-lg text-gray-800 mb-4">إدارة البيانات</h3>
+                             <div class="flex flex-wrap gap-4">
+                                <button onclick="backupData()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📥 نسخ احتياطي للبيانات</button>
+                                <div>
+                                    <label for="restoreFile" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium text-sm cursor-pointer">📤 استعادة نسخة احتياطية</label>
+                                    <input type="file" id="restoreFile" class="hidden" accept=".json" onchange="restoreData(event)">
+                                </div>
+                             </div>
+                        </div>
+
+                        <!-- Danger Zone -->
+                        <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                             <h3 class="font-semibold text-lg text-red-800 mb-2">منطقة الخطر</h3>
+                             <p class="text-sm text-red-700 mb-4">سيؤدي هذا الإجراء إلى حذف جميع البيانات المحفوظة في التطبيق بشكل نهائي، بما في ذلك الطلاب، النماذج، والسجلات.</p>
+                             <button onclick="clearAllData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🗑️ مسح جميع بيانات التطبيق</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </main>
+        
     </div>
 
     <script>
@@ -506,6 +561,7 @@
         let isScanningForKey = false;
         
         // Data loaded from localStorage
+        let settings = {};
         let studentsList = [];
         let resultsHistory = [];
         let detailedAnswersLog = [];
@@ -549,6 +605,8 @@
             
             if (sectionId === 'correction') populateCorrectionStudentSelect();
             if (sectionId === 'reports') populateReportFilters();
+            if (sectionId === 'stats') updateGlobalStats();
+
             if (sectionId !== 'correction') document.getElementById('multipleCorrectionSection').classList.add('hidden');
             
             if (window.innerWidth < 768) { // md breakpoint
@@ -579,10 +637,13 @@
         });
 
         function loadInitialUI() {
+            settings = getFromStorage('appSettings', {});
             studentsList = getFromStorage('studentsList', []);
             resultsHistory = getFromStorage('examResults', []);
             detailedAnswersLog = getFromStorage('detailedAnswersLog', []);
             answerKeyModels = getFromStorage('answerKeyModels', {});
+            
+            loadSettings();
 
             if (Object.keys(answerKeyModels).length === 0) {
                 answerKeyModels['نموذج أ'] = { name: "نموذج أ", subject: "", answers: [] };
@@ -1170,14 +1231,32 @@
 
         function exportDetailedAnswersLog() {
             if (detailedAnswersLog.length === 0) { showNotification("لا يوجد سجل مفصل لتصديره.", "info"); return; }
-            const maxQuestions = Math.max(...detailedAnswersLog.map(log => log.answers.length));
+            const modelName = document.getElementById('answerKeyModel').value;
+            const modelAnswers = answerKeyModels[modelName] ? answerKeyModels[modelName].answers : [];
+
+            const maxQuestions = modelAnswers.length;
+            if (maxQuestions === 0) {
+                showNotification("يرجى التأكد من أن نموذج الإجابة المحدد يحتوي على إجابات.", "error");
+                return;
+            }
+
             const headers = ['اسم الطالب', 'الفصل', 'اسم الاختبار', 'التاريخ', 'الدرجة'];
-            for(let i=1; i<= maxQuestions; i++) { headers.push(`س${i}`); }
+            for(let i=1; i<= maxQuestions; i++) { 
+                headers.push(`س${i}`);
+                headers.push(`درجة س${i}`);
+            }
+            
             const data = detailedAnswersLog.map(log => {
                 const row = {'اسم الطالب': log.studentName, 'الفصل': log.studentClass, 'اسم الاختبار': log.examName, 'التاريخ': log.examDate, 'الدرجة': log.score };
-                log.answers.forEach((ans, i) => { row[`س${i+1}`] = ans; });
+                for(let i=0; i < maxQuestions; i++) {
+                    const studentAnswer = log.answers[i] || "فراغ";
+                    const correctAnswer = modelAnswers[i];
+                    row[`س${i+1}`] = studentAnswer;
+                    row[`درجة س${i}`] = studentAnswer === correctAnswer ? 1 : 0;
+                }
                 return row;
             });
+
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(data, {header: headers});
             XLSX.utils.book_append_sheet(wb, ws, 'سجل إجابات الطلاب');
@@ -1284,7 +1363,11 @@
 
         function exportMultiReport() {
             const reportData = multiCorrectionResults.map(r => ({
-                'اسم الطالب': r.student.name, 'الفصل': r.student.class, 'الحالة': r.status === 'completed' ? 'تم التصحيح' : 'تم التخطي', 'النتيجة': r.result ? r.result.percentage : '-',
+                'اسم الطالب': r.student.name, 
+                'الفصل': r.student.class, 
+                'الحالة': r.status === 'completed' ? 'تم التصحيح' : 'تم التخطي', 
+                'الدرجة': r.result ? r.result.score : '-',
+                'النسبة': r.result ? r.result.percentage : '-',
             }));
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.json_to_sheet(reportData);
@@ -1325,7 +1408,6 @@
                 return;
             }
             
-            // Find the answer key for this exam
             const firstLog = filteredLogs[0];
             const modelName = Object.keys(answerKeyModels).find(key => 
                 (answerKeyModels[key].subject === firstLog.examName || key === firstLog.examName) && 
@@ -1333,30 +1415,38 @@
             );
             const reportCorrectAnswers = modelName ? answerKeyModels[modelName].answers : [];
 
-            // Calculate stats
             const scores = filteredLogs.map(log => parseInt(log.percentage));
             const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
             const maxScore = Math.max(...scores);
             const minScore = Math.min(...scores);
             
-            // Question analysis
             const questionErrors = {};
             if (reportCorrectAnswers.length > 0) {
                 for (let i = 0; i < reportCorrectAnswers.length; i++) {
-                    questionErrors[i + 1] = 0;
+                    questionErrors[i + 1] = { errors: 0, choices: {} };
                 }
                 filteredLogs.forEach(log => {
                     log.answers.forEach((studentAnswer, i) => {
                         if (studentAnswer !== reportCorrectAnswers[i]) {
-                            questionErrors[i + 1]++;
+                            questionErrors[i + 1].errors++;
+                            if(studentAnswer !== 'فراغ'){
+                                questionErrors[i + 1].choices[studentAnswer] = (questionErrors[i + 1].choices[studentAnswer] || 0) + 1;
+                            }
                         }
                     });
                 });
             }
             
-            const sortedErrors = Object.entries(questionErrors).sort(([,a],[,b]) => b-a);
+            const sortedErrors = Object.entries(questionErrors).sort(([,a],[,b]) => b.errors - a.errors);
             const hardestQuestions = sortedErrors.slice(0, 3).map(([q]) => q);
             const easiestQuestions = sortedErrors.slice(-3).reverse().map(([q]) => q);
+
+            const studentListHTML = filteredLogs.map(log => `
+                <li class="flex justify-between items-center bg-gray-50 p-2 rounded">
+                    <span>${log.studentName}</span>
+                    <span class="font-bold ${parseInt(log.percentage) >= 60 ? 'text-green-600' : 'text-red-600'}">${log.percentage} (${log.score})</span>
+                </li>
+            `).join('');
 
             let reportHTML = `
                 <div id="printable-report" class="bg-white p-6 rounded-lg shadow-md">
@@ -1372,7 +1462,7 @@
                         <div class="bg-red-100 p-3 rounded-lg"><div class="font-bold text-xl">${minScore}%</div><div class="text-xs">أقل درجة</div></div>
                     </div>
 
-                    <h4 class="text-lg font-bold mb-2">تحليل الأسئلة</h4>
+                    <h4 class="text-lg font-bold mb-2">تحليل أولي للأسئلة</h4>
                     <div class="grid grid-cols-2 gap-4 mb-6">
                         <div class="bg-red-50 p-3 rounded-lg">
                             <h5 class="font-semibold mb-1">الأصعب (الأكثر خطأً)</h5>
@@ -1383,33 +1473,127 @@
                             <p class="text-sm">${easiestQuestions.length > 0 ? 'الأسئلة رقم: ' + easiestQuestions.join(', ') : 'لا توجد بيانات كافية'}</p>
                         </div>
                     </div>
-
-                    <h4 class="text-lg font-bold mb-2">درجات الطلاب</h4>
-                    <ul class="space-y-2 max-h-48 overflow-y-auto">
-                        ${filteredLogs.map(log => `
-                            <li class="flex justify-between items-center bg-gray-50 p-2 rounded">
-                                <span>${log.studentName}</span>
-                                <span class="font-bold ${parseInt(log.percentage) >= 60 ? 'text-green-600' : 'text-red-600'}">${log.percentage} (${log.score})</span>
-                            </li>
-                        `).join('')}
-                    </ul>
-                    <div class="text-center mt-6">
-                        <button onclick="printReport()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة التقرير</button>
+                    
+                    <div class="flex justify-center gap-4">
+                        <button onclick="generateQuestionAnalysisReport()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">تحليل مفصل للأسئلة</button>
+                        <button onclick="printReport('${classFilter}', '${examFilter}')" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة التقرير</button>
                     </div>
                 </div>
             `;
             container.innerHTML = reportHTML;
         }
+
+        function generateQuestionAnalysisReport() {
+            // Re-filter logs to ensure we have the correct data
+            const classFilter = document.getElementById('reportClassFilter').value;
+            const examFilter = document.getElementById('reportExamFilter').value;
+            const filteredLogs = detailedAnswersLog.filter(log => 
+                (!classFilter || log.studentClass === classFilter) &&
+                (!examFilter || log.examName === examFilter)
+            );
+            if (filteredLogs.length === 0) return;
+            const firstLog = filteredLogs[0];
+            const modelName = Object.keys(answerKeyModels).find(key => 
+                (answerKeyModels[key].subject === firstLog.examName || key === firstLog.examName) && 
+                 answerKeyModels[key].answers.length === firstLog.answers.length
+            );
+            const reportCorrectAnswers = modelName ? answerKeyModels[modelName].answers : [];
+            if (reportCorrectAnswers.length === 0) {
+                 showNotification("لا يمكن إنشاء تحليل مفصل بدون نموذج إجابة مطابق.", "error");
+                return;
+            }
+
+            const questionAnalysis = {};
+            for (let i = 0; i < reportCorrectAnswers.length; i++) {
+                questionAnalysis[i + 1] = { correct: 0, incorrect: 0, choices: {} };
+            }
+
+            filteredLogs.forEach(log => {
+                log.answers.forEach((studentAnswer, i) => {
+                    const questionNum = i + 1;
+                    if (studentAnswer === reportCorrectAnswers[i]) {
+                        questionAnalysis[questionNum].correct++;
+                    } else {
+                        questionAnalysis[questionNum].incorrect++;
+                        const choice = studentAnswer || 'فراغ';
+                        questionAnalysis[questionNum].choices[choice] = (questionAnalysis[questionNum].choices[choice] || 0) + 1;
+                    }
+                });
+            });
+
+             let reportHTML = `
+                <div id="printable-analysis-report" class="bg-white p-6 rounded-lg shadow-md mt-6">
+                     <div class="text-center border-b pb-4 mb-4">
+                        <h3 class="text-2xl font-bold">تحليل الأسئلة المفصل</h3>
+                        <p class="text-gray-600">${examFilter || 'الاختبار المحدد'}</p>
+                    </div>
+                    <div class="space-y-4">
+            `;
+            
+            Object.entries(questionAnalysis).forEach(([qNum, data]) => {
+                const totalAnswers = data.correct + data.incorrect;
+                const correctPercentage = totalAnswers > 0 ? Math.round((data.correct / totalAnswers) * 100) : 0;
+                const wrongChoices = Object.entries(data.choices).map(([choice, count]) => `${count} طالب اختاروا ${choice}`).join('، ');
+
+                reportHTML += `
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="flex justify-between items-center mb-2">
+                            <h4 class="font-bold text-lg">سؤال ${qNum} (الإجابة: ${reportCorrectAnswers[qNum-1]})</h4>
+                            <span class="font-bold text-lg ${correctPercentage >= 70 ? 'text-green-600' : 'text-red-600'}">${correctPercentage}%</span>
+                        </div>
+                        <div class="text-sm grid grid-cols-2 gap-x-4">
+                            <p><strong>صحيحة:</strong> ${data.correct}</p>
+                            <p><strong>خاطئة:</strong> ${data.incorrect}</p>
+                        </div>
+                        ${data.incorrect > 0 ? `<p class="text-xs text-gray-500 mt-1">تفاصيل الأخطاء: ${wrongChoices}</p>` : ''}
+                    </div>
+                `;
+            });
+
+            reportHTML += `
+                    </div>
+                    <div class="text-center mt-6">
+                        <button onclick="printReportAnalysis()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة تحليل الأسئلة</button>
+                    </div>
+                </div>
+            `;
+             document.getElementById('report-container').innerHTML += reportHTML;
+        }
         
-        function printReport() {
-            const reportContent = document.getElementById('printable-report').innerHTML;
+        function printReport(classFilter, examFilter) {
+            const filteredLogs = detailedAnswersLog.filter(log => 
+                (!classFilter || log.studentClass === classFilter) &&
+                (!examFilter || log.examName === examFilter)
+            );
+            const studentListHTML = filteredLogs.map(log => `
+                <tr class="border-b">
+                    <td class="p-2">${log.studentName}</td>
+                    <td class="p-2 text-center">${log.score}</td>
+                    <td class="p-2 text-center">${log.percentage}</td>
+                </tr>
+            `).join('');
+
+            const reportContent = document.getElementById('printable-report').cloneNode(true);
+            reportContent.querySelector('ul').outerHTML = `
+                <table class="w-full text-sm mt-4">
+                    <thead><tr class="border-b-2 border-black"><th class="p-2 text-right">اسم الطالب</th><th class="p-2">الدرجة</th><th class="p-2">النسبة</th></tr></thead>
+                    <tbody>${studentListHTML}</tbody>
+                </table>
+            `;
+            reportContent.querySelector('button').remove();
+            
             const win = window.open('', 'Print', 'height=800,width=800');
-            win.document.write(`<html><head><title>تقرير الأداء</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${reportContent}</body></html>`);
+            win.document.write(`<html><head><title>تقرير الأداء</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${reportContent.innerHTML}</body></html>`);
             win.document.close();
-            setTimeout(() => {
-                win.print();
-                win.close();
-            }, 500);
+            setTimeout(() => { win.print(); win.close(); }, 500);
+        }
+
+        function printReportAnalysis() {
+            const reportContent = document.getElementById('printable-analysis-report').innerHTML;
+            const win = window.open('', 'Print', 'height=800,width=800');
+            win.document.write(`<html><head><title>تحليل الأسئلة</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${reportContent}</body></html>`);
+            win.document.close();
+            setTimeout(() => { win.print(); win.close(); }, 500);
         }
 
 
@@ -1435,12 +1619,26 @@
                 col2 += `</div>`;
             }
 
+            const settings = getFromStorage('appSettings', {});
+            const headerInfo = `
+                <p>${settings.admin || ''}</p>
+                <p>${settings.school || ''}</p>
+                <h1>اختبار مادة: ${subjectName} - نموذج رقم (${modelName})</h1>
+                <div class="sub-header">
+                    <span>العام الدراسي: ${settings.year || ''}</span>
+                    <span>الفصل الدراسي: ${settings.semester || ''}</span>
+                </div>
+            `;
+
             let content = `
                 <style>
                     body { font-family: 'Cairo', sans-serif; direction: rtl; margin: 20px; }
                     .page { max-width: 800px; margin: auto; }
                     .header-container { display: flex; justify-content: space-between; align-items: flex-start;  border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
                     .header { text-align: center; flex-grow: 1; }
+                    .header h1 { font-size: 1.5rem; font-weight: bold; margin: 5px 0;}
+                    .header p { margin: 2px 0; font-size: 0.9rem; }
+                    .sub-header { font-size: 0.9rem; color: #555; }
                     #qrcode-container { width: 80px; height: 80px; }
                     .info { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px; font-size: 14px; }
                     .info-item { border-bottom: 1.5px dotted #888; padding-bottom: 8px; }
@@ -1456,13 +1654,11 @@
                 <div class="page">
                     <div class="header-container">
                         <div id="qrcode-container"></div>
-                        <div class="header"><h1>اختبار مادة: ${subjectName} - نموذج رقم (${modelName})</h1></div>
+                        <div class="header">${headerInfo}</div>
                     </div>
                     <div class="info">
                         <div class="info-item"><strong>اسم الطالب:</strong></div>
                         <div class="info-item"><strong>الفصل:</strong></div>
-                        <div class="info-item"><strong>اسم الاختبار:</strong></div>
-                        <div class="info-item"><strong>التاريخ:</strong></div>
                     </div>
                     <div class="columns-container">
                         <div class="column">${col1}</div>
@@ -1477,26 +1673,126 @@
             win.document.write('<html><head><title>طباعة نموذج</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head><body>' + content + '</body></html>');
             win.document.close();
 
-             setTimeout(() => { // Delay to ensure DOM is ready
+             setTimeout(() => { 
                 if (win.QRCode) {
-                    const qrData = JSON.stringify({
-                        subject: subjectName,
-                        model: modelName,
-                        questions: qCount
-                    });
-
-                    new win.QRCode(win.document.getElementById("qrcode-container"), {
-                        text: qrData,
-                        width: 80,
-                        height: 80,
-                        correctLevel : win.QRCode.CorrectLevel.H
-                    });
-                } else {
-                    console.error("QRCode library failed to load in the print window.");
-                    win.document.getElementById("qrcode-container").innerText = "QR Error";
+                    const qrData = JSON.stringify({ subject: subjectName, model: modelName, questions: qCount });
+                    new win.QRCode(win.document.getElementById("qrcode-container"), { text: qrData, width: 80, height: 80, correctLevel : win.QRCode.CorrectLevel.H });
                 }
                 win.focus();
              }, 500);
+        }
+        
+        // === Settings Section ===
+        function saveSettings() {
+            settings = {
+                admin: document.getElementById('setting-admin').value,
+                school: document.getElementById('setting-school').value,
+                teacher: document.getElementById('setting-teacher').value,
+                director: document.getElementById('setting-director').value,
+                year: document.getElementById('setting-year').value,
+                semester: document.getElementById('setting-semester').value,
+            };
+            localStorage.setItem('appSettings', JSON.stringify(settings));
+            showNotification('تم حفظ الإعدادات بنجاح!', 'success');
+        }
+
+        function loadSettings() {
+            document.getElementById('setting-admin').value = settings.admin || '';
+            document.getElementById('setting-school').value = settings.school || '';
+            document.getElementById('setting-teacher').value = settings.teacher || '';
+            document.getElementById('setting-director').value = settings.director || '';
+            document.getElementById('setting-year').value = settings.year || '';
+            document.getElementById('setting-semester').value = settings.semester || '';
+        }
+
+        function backupData() {
+            const data = {
+                appSettings: settings,
+                studentsList: studentsList,
+                examResults: resultsHistory,
+                detailedAnswersLog: detailedAnswersLog,
+                answerKeyModels: answerKeyModels,
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showNotification('تم إنشاء النسخة الاحتياطية بنجاح!', 'success');
+        }
+
+        function restoreData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!confirm("هل أنت متأكد من استعادة البيانات؟ سيتم الكتابة فوق جميع البيانات الحالية.")) {
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.appSettings && data.studentsList && data.examResults) {
+                        localStorage.setItem('appSettings', JSON.stringify(data.appSettings || {}));
+                        localStorage.setItem('studentsList', JSON.stringify(data.studentsList || []));
+                        localStorage.setItem('examResults', JSON.stringify(data.examResults || []));
+                        localStorage.setItem('detailedAnswersLog', JSON.stringify(data.detailedAnswersLog || []));
+                        localStorage.setItem('answerKeyModels', JSON.stringify(data.answerKeyModels || {}));
+                        showNotification('تم استعادة البيانات بنجاح! سيتم إعادة تحميل الصفحة.', 'success');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        throw new Error("ملف غير صالح.");
+                    }
+                } catch (error) {
+                    showNotification(`خطأ في استعادة البيانات: ${error.message}`, 'error');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            const confirmation = prompt("للتأكيد، يرجى كتابة 'حذف' في المربع أدناه.");
+            if (confirmation === 'حذف') {
+                localStorage.clear();
+                showNotification('تم حذف جميع البيانات بنجاح! سيتم إعادة تحميل الصفحة.', 'success');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showNotification('لم يتم الحذف. الكتابة غير مطابقة.', 'info');
+            }
+        }
+        
+        // === Stats Section ===
+        function updateGlobalStats() {
+            const container = document.getElementById('stats-container');
+            const totalCorrected = resultsHistory.length;
+            const overallAverage = totalCorrected > 0 ? Math.round(resultsHistory.reduce((sum, r) => sum + parseInt(r.percentage), 0) / totalCorrected) : 0;
+            const uniqueStudents = new Set(resultsHistory.map(r => r.studentName)).size;
+            const uniqueExams = new Set(resultsHistory.map(r => r.examName)).size;
+
+            container.innerHTML = `
+                <div class="bg-blue-100 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-blue-600">${totalCorrected}</div>
+                    <div class="text-sm">ورقة مصححة</div>
+                </div>
+                <div class="bg-green-100 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-green-600">${overallAverage}%</div>
+                    <div class="text-sm">متوسط الأداء العام</div>
+                </div>
+                <div class="bg-purple-100 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-purple-600">${uniqueStudents}</div>
+                    <div class="text-sm">طالب فريد</div>
+                </div>
+                <div class="bg-yellow-100 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-yellow-600">${uniqueExams}</div>
+                    <div class="text-sm">اختبار فريد</div>
+                </div>
+            `;
         }
 
     </script>
