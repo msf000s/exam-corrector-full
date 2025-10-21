@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { box-sizing: border-box; font-family: 'Cairo', sans-serif; }
         .camera-container {
@@ -491,8 +492,19 @@
             <section id="stats" class="app-section">
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                      <h2 class="text-2xl font-bold text-gray-800 mb-4">📈 الإحصائيات العامة</h2>
-                     <div id="stats-container" class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <!-- Stats will be populated here by JS -->
+                     <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-lg text-gray-800 mb-2">ملخص الأداء</h3>
+                            <div id="summary-stats" class="grid grid-cols-2 gap-4"></div>
+                        </div>
+                         <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-lg text-gray-800 mb-2">توزيع التقديرات</h3>
+                            <canvas id="grade-distribution-chart"></canvas>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg md:col-span-2">
+                            <h3 class="font-semibold text-lg text-gray-800 mb-2">متوسط الأداء حسب الفصل</h3>
+                            <canvas id="class-performance-chart"></canvas>
+                        </div>
                      </div>
                 </div>
             </section>
@@ -563,6 +575,10 @@
         let multiCorrectionQueue = [];
         let currentMultiIndex = 0;
         let multiCorrectionResults = [];
+
+        // Chart instances
+        let gradeChart = null;
+        let classChart = null;
 
         // === Safe localStorage Parsing ===
         function getFromStorage(key, defaultValue) {
@@ -638,7 +654,7 @@
             loadSettings();
 
             if (Object.keys(answerKeyModels).length === 0) {
-                answerKeyModels['نموذج أ'] = { name: "نموذج أ", subject: "", examName: "", examDate: "", answers: [] };
+                answerKeyModels['نموذج أ'] = { name: "نموذج أ", subject: "", examName: "", examDate: new Date().toISOString().split('T')[0], answers: [] };
             }
             updateModelsDropdown();
             if (studentsList.length > 0) displayStudentsList();
@@ -672,6 +688,7 @@
             const reader = new FileReader();
             reader.onload = (e) => {
                 document.getElementById('capturedImage').src = e.target.result;
+                document.getElementById('verificationContainer').classList.remove('hidden');
                 processAnswers();
             };
             if (typeof file === 'string') {
@@ -1027,9 +1044,8 @@
             if (!currentStudent && !isMultipleCorrectionMode && !isScanningForKey) {
                 showNotification('يرجى اختيار طالب أولاً.', 'error'); return;
             }
-
-            const processBtn = document.getElementById('processBtn'), spinner = document.getElementById('processBtnSpinner'), btnText = document.getElementById('processBtnText');
-            processBtn.disabled = true; spinner.classList.remove('hidden'); btnText.textContent = 'جاري التحليل...';
+            
+            document.getElementById('verificationContainer').classList.remove('hidden');
             
             try {
                 const imageSrc = document.getElementById('capturedImage').src;
@@ -1065,8 +1081,6 @@
             } catch (err) {
                 showNotification(`فشل تحليل الصورة: ${err.message}`, 'error');
                 resetForNewSheet();
-            } finally {
-                processBtn.disabled = false; spinner.classList.add('hidden'); btnText.textContent = '🔍 تحليل الإجابات';
             }
         }
 
@@ -1092,8 +1106,7 @@
 
         function confirmAnswers() {
             studentAnswers = Array.from({ length: correctAnswers.length }, (_, i) => document.getElementById(`verify${i}`).value);
-            document.getElementById('verificationSection').classList.add('hidden');
-            document.getElementById('capturedSection').classList.add('hidden');
+            document.getElementById('verificationContainer').classList.add('hidden');
             displayResults();
         }
 
@@ -1169,8 +1182,7 @@
 
         function resetForNewSheet() {
             document.getElementById('resultsSection').classList.add('hidden');
-            document.getElementById('verificationSection').classList.add('hidden');
-            document.getElementById('capturedSection').classList.add('hidden');
+            document.getElementById('verificationContainer').classList.add('hidden');
             selectDifferentStudent();
             showNotification('تم الحفظ! يمكنك الآن تصحيح ورقة جديدة.', 'success');
             
@@ -1418,19 +1430,8 @@
             const hardestQuestions = sortedErrors.slice(0, 3).map(([q]) => q);
             const easiestQuestions = sortedErrors.slice(-3).reverse().map(([q]) => q);
 
-            const studentListHTML = filteredLogs.map(log => `
-                <li class="flex justify-between items-center bg-gray-50 p-2 rounded">
-                    <span>${log.studentName}</span>
-                    <span class="font-bold ${parseInt(log.percentage) >= 60 ? 'text-green-600' : 'text-red-600'}">${log.percentage} (${log.score})</span>
-                </li>
-            `).join('');
-
             let reportHTML = `
                 <div id="printable-report" class="bg-white p-6 rounded-lg shadow-md">
-                    <div class="text-center border-b pb-4 mb-4">
-                        <h3 class="text-2xl font-bold">تقرير أداء الفصل</h3>
-                        <p class="text-gray-600">${classFilter ? `للفصل: ${classFilter}`: 'لجميع الفصول'} - ${examFilter ? `اختبار: ${examFilter}` : 'لجميع الاختبارات'}</p>
-                    </div>
                     
                     <h4 class="text-lg font-bold mb-2">ملخص الأداء</h4>
                     <div class="grid grid-cols-3 gap-4 mb-6 text-center">
@@ -1451,103 +1452,59 @@
                         </div>
                     </div>
                     
-                    <div class="flex justify-center gap-4">
-                        <button onclick="generateQuestionAnalysisReport()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">تحليل مفصل للأسئلة</button>
-                        <button onclick="printReport()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة التقرير</button>
+                    <div class="text-center">
+                        <button onclick="printReport()" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة التقرير الكامل</button>
                     </div>
                 </div>
             `;
             container.innerHTML = reportHTML;
         }
 
-        function generateQuestionAnalysisReport() {
-            // Re-filter logs to ensure we have the correct data
+        async function printReport() {
             const classFilter = document.getElementById('reportClassFilter').value;
             const examFilter = document.getElementById('reportExamFilter').value;
-            const filteredLogs = detailedAnswersLog.filter(log => 
+            const title = `تقرير أداء ${examFilter || 'الاختبار'}`;
+            const container = document.getElementById('report-container').cloneNode(true);
+            const reportButton = container.querySelector('button');
+            if(reportButton) reportButton.remove();
+
+            const studentLogs = detailedAnswersLog.filter(log => 
                 (!classFilter || log.studentClass === classFilter) &&
                 (!examFilter || log.examName === examFilter)
             );
-            if (filteredLogs.length === 0) return;
-            const firstLog = filteredLogs[0];
-            const modelName = Object.keys(answerKeyModels).find(key => 
-                (answerKeyModels[key].subject === firstLog.examName || key === firstLog.examName) && 
-                 answerKeyModels[key].answers.length === firstLog.answers.length
-            );
-            const reportCorrectAnswers = modelName ? answerKeyModels[modelName].answers : [];
-            if (reportCorrectAnswers.length === 0) {
-                 showNotification("لا يمكن إنشاء تحليل مفصل بدون نموذج إجابة مطابق.", "error");
-                return;
-            }
+            
+            const studentListHTML = studentLogs.map(log => `
+                <tr class="border-b">
+                    <td class="p-2">${log.studentName}</td>
+                    <td class="p-2 text-center">${log.score}</td>
+                    <td class="p-2 text-center">${log.percentage}</td>
+                    <td class="p-2 text-center">${log.grade}</td>
+                </tr>
+            `).join('');
 
-            const questionAnalysis = {};
-            for (let i = 0; i < reportCorrectAnswers.length; i++) {
-                questionAnalysis[i + 1] = { correct: 0, incorrect: 0, choices: {} };
-            }
+            const chartImage = await getReportChartsAsImages();
 
-            filteredLogs.forEach(log => {
-                log.answers.forEach((studentAnswer, i) => {
-                    const questionNum = i + 1;
-                    if (studentAnswer === reportCorrectAnswers[i]) {
-                        questionAnalysis[questionNum].correct++;
-                    } else {
-                        questionAnalysis[questionNum].incorrect++;
-                        const choice = studentAnswer || 'فراغ';
-                        questionAnalysis[questionNum].choices[choice] = (questionAnalysis[questionNum].choices[choice] || 0) + 1;
-                    }
-                });
-            });
-
-             let reportHTML = `
-                <div id="printable-analysis-report" class="bg-white p-6 rounded-lg shadow-md mt-6">
-                     <div class="text-center border-b pb-4 mb-4">
-                        <h3 class="text-2xl font-bold">تحليل الأسئلة المفصل</h3>
-                        <p class="text-gray-600">${examFilter || 'الاختبار المحدد'}</p>
-                    </div>
-                    <div class="space-y-4">
+            const studentTable = `
+                <h4 class="text-lg font-bold mt-6 mb-2">درجات الطلاب</h4>
+                <table class="w-full text-sm mt-4">
+                    <thead><tr class="border-b-2 border-black"><th class="p-2 text-right">اسم الطالب</th><th class="p-2">الدرجة</th><th class="p-2">النسبة</th><th class="p-2">التقدير</th></tr></thead>
+                    <tbody>${studentListHTML}</tbody>
+                </table>
+                 <h4 class="text-lg font-bold mt-6 mb-2">توزيع التقديرات</h4>
+                <img src="${chartImage}" class="mx-auto" style="max-width: 300px;"/>
             `;
             
-            Object.entries(questionAnalysis).forEach(([qNum, data]) => {
-                const totalAnswers = data.correct + data.incorrect;
-                const correctPercentage = totalAnswers > 0 ? Math.round((data.correct / totalAnswers) * 100) : 0;
-                const wrongChoices = Object.entries(data.choices).map(([choice, count]) => `${count} طالب اختاروا ${choice}`).join('، ');
+            container.innerHTML += studentTable;
 
-                reportHTML += `
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <div class="flex justify-between items-center mb-2">
-                            <h4 class="font-bold text-lg">سؤال ${qNum} (الإجابة: ${reportCorrectAnswers[qNum-1]})</h4>
-                            <span class="font-bold text-lg ${correctPercentage >= 70 ? 'text-green-600' : 'text-red-600'}">${correctPercentage}%</span>
-                        </div>
-                        <div class="text-sm grid grid-cols-2 gap-x-4">
-                            <p><strong>صحيحة:</strong> ${data.correct}</p>
-                            <p><strong>خاطئة:</strong> ${data.incorrect}</p>
-                        </div>
-                        ${data.incorrect > 0 ? `<p class="text-xs text-gray-500 mt-1">تفاصيل الأخطاء: ${wrongChoices}</p>` : ''}
-                    </div>
-                `;
-            });
-
-            reportHTML += `
-                    </div>
-                    <div class="text-center mt-6">
-                        <button onclick="printContent('printable-analysis-report', 'تحليل الأسئلة')" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg font-medium text-sm">طباعة تحليل الأسئلة</button>
-                    </div>
-                </div>
-            `;
-             document.getElementById('report-container').innerHTML += reportHTML;
-        }
-        
-        function printReport() {
-             const reportContent = document.getElementById('printable-report').cloneNode(true);
-             const buttons = reportContent.querySelectorAll('button');
-             buttons.forEach(btn => btn.remove());
-             printContent(reportContent.innerHTML, 'تقرير الأداء');
+            printContent(container.innerHTML, title);
         }
 
         function printContent(content, title) {
             const settings = getFromStorage('appSettings', {});
             const classFilter = document.getElementById('reportClassFilter').value;
             const examFilter = document.getElementById('reportExamFilter').value;
+            const date = new Date().toLocaleDateString('ar-SA');
+            const fileName = `${title.replace(/\s/g, '-')}-${examFilter.replace(/\s/g, '-')}-${date}.html`;
 
             const headerInfo = `
                 <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
@@ -1563,7 +1520,7 @@
 
             const fullContent = headerInfo + content;
             const win = window.open('', 'Print', 'height=800,width=800');
-            win.document.write(`<html><head><title>${title}</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${fullContent}</body></html>`);
+            win.document.write(`<html><head><title>${fileName}</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo'}</style></head><body dir="rtl" class="p-4">${fullContent}</body></html>`);
             win.document.close();
             setTimeout(() => { win.print(); win.close(); }, 500);
         }
@@ -1578,6 +1535,9 @@
             const examName = document.getElementById('examName').value || 'غير محدد';
             const examDate = document.getElementById('examDate').value || '';
             const splitPoint = Math.ceil(qCount / 2);
+            const date = new Date().toLocaleDateString('ar-SA');
+            const fileName = `نموذج-إجابة-${subjectName}-${date}.html`;
+
 
             let col1 = '';
             for (let i = 1; i <= splitPoint; i++) {
@@ -1646,7 +1606,7 @@
             `;
             
             const win = window.open('', 'Print', 'height=800,width=800');
-            win.document.write('<html><head><title>طباعة نموذج</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head><body>' + content + '</body></html>');
+            win.document.write(`<html><head><title>${fileName}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head><body>' + content + '</body></html>`);
             win.document.close();
 
              setTimeout(() => { 
@@ -1745,30 +1705,59 @@
         
         // === Stats Section ===
         function updateGlobalStats() {
-            const container = document.getElementById('stats-container');
+            const container = document.getElementById('summary-stats');
             const totalCorrected = resultsHistory.length;
             const overallAverage = totalCorrected > 0 ? Math.round(resultsHistory.reduce((sum, r) => sum + parseInt(r.percentage), 0) / totalCorrected) : 0;
             const uniqueStudents = new Set(resultsHistory.map(r => r.studentName)).size;
             const uniqueExams = new Set(resultsHistory.map(r => r.examName)).size;
 
             container.innerHTML = `
-                <div class="bg-blue-100 p-4 rounded-lg text-center">
-                    <div class="text-3xl font-bold text-blue-600">${totalCorrected}</div>
-                    <div class="text-sm">ورقة مصححة</div>
-                </div>
-                <div class="bg-green-100 p-4 rounded-lg text-center">
-                    <div class="text-3xl font-bold text-green-600">${overallAverage}%</div>
-                    <div class="text-sm">متوسط الأداء العام</div>
-                </div>
-                <div class="bg-purple-100 p-4 rounded-lg text-center">
-                    <div class="text-3xl font-bold text-purple-600">${uniqueStudents}</div>
-                    <div class="text-sm">طالب فريد</div>
-                </div>
-                <div class="bg-yellow-100 p-4 rounded-lg text-center">
-                    <div class="text-3xl font-bold text-yellow-600">${uniqueExams}</div>
-                    <div class="text-sm">اختبار فريد</div>
-                </div>
+                <div class="bg-blue-100 p-3 rounded-lg text-center"><div class="text-2xl font-bold text-blue-600">${totalCorrected}</div><div class="text-xs">ورقة مصححة</div></div>
+                <div class="bg-green-100 p-3 rounded-lg text-center"><div class="text-2xl font-bold text-green-600">${overallAverage}%</div><div class="text-xs">متوسط الأداء</div></div>
+                <div class="bg-purple-100 p-3 rounded-lg text-center"><div class="text-2xl font-bold text-purple-600">${uniqueStudents}</div><div class="text-xs">طالب فريد</div></div>
+                <div class="bg-yellow-100 p-3 rounded-lg text-center"><div class="text-2xl font-bold text-yellow-600">${uniqueExams}</div><div class="text-xs">اختبار فريد</div></div>
             `;
+            
+            // Grade Distribution Chart
+            const gradeCtx = document.getElementById('grade-distribution-chart').getContext('2d');
+            if(gradeChart) gradeChart.destroy();
+            const gradeCounts = { 'ممتاز': 0, 'جيد جداً': 0, 'جيد': 0, 'مقبول': 0, 'ضعيف': 0 };
+            resultsHistory.forEach(r => { if(gradeCounts[r.grade] !== undefined) gradeCounts[r.grade]++; });
+            gradeChart = new Chart(gradeCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(gradeCounts),
+                    datasets: [{
+                        data: Object.values(gradeCounts),
+                        backgroundColor: ['#22c55e', '#84cc16', '#facc15', '#fb923c', '#ef4444'],
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Class Performance Chart
+            const classCtx = document.getElementById('class-performance-chart').getContext('2d');
+            if(classChart) classChart.destroy();
+            const classPerformances = {};
+            resultsHistory.forEach(r => {
+                if(!classPerformances[r.studentClass]) classPerformances[r.studentClass] = { total: 0, count: 0 };
+                classPerformances[r.studentClass].total += parseInt(r.percentage);
+                classPerformances[r.studentClass].count++;
+            });
+            const classLabels = Object.keys(classPerformances).sort();
+            const classAverages = classLabels.map(c => Math.round(classPerformances[c].total / classPerformances[c].count));
+            classChart = new Chart(classCtx, {
+                type: 'bar',
+                data: {
+                    labels: classLabels,
+                    datasets: [{
+                        label: 'متوسط الدرجات',
+                        data: classAverages,
+                        backgroundColor: '#4f46e5',
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
+            });
         }
 
     </script>
