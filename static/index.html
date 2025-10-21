@@ -72,26 +72,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen">
-    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden" onclick="toggleSidebar()"></div>
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
     <div class="flex flex-col md:flex-row">
         <!-- Sidebar -->
         <aside id="sidebar" class="w-64 bg-gray-800 text-white p-4 min-h-screen fixed md:relative inset-y-0 right-0 transform translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out z-40">
             <h1 class="text-2xl font-bold text-center mb-8">المصحح الذكي</h1>
             <nav class="flex flex-col gap-2">
-                <a href="#dashboard" class="nav-link active p-3 rounded-lg hover:bg-gray-700" onclick="showSection('dashboard')">🏠 لوحة التحكم</a>
-                <a href="#students" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('students')">👥 الطلاب</a>
-                <a href="#answer-key" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('answer-key')">🔑 نماذج الإجابة</a>
-                <a href="#correction" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('correction')">📷 التصحيح</a>
-                <a href="#history" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('history')">📚 السجلات</a>
-                <a href="#reports" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('reports')">🖨️ التقارير</a>
-                <a href="#stats" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('stats')">📈 الإحصائيات</a>
-                <a href="#settings" class="nav-link p-3 rounded-lg hover:bg-gray-700" onclick="showSection('settings')">⚙️ الإعدادات</a>
+                <a href="#dashboard" class="nav-link active p-3 rounded-lg hover:bg-gray-700">🏠 لوحة التحكم</a>
+                <a href="#students" class="nav-link p-3 rounded-lg hover:bg-gray-700">👥 الطلاب</a>
+                <a href="#answer-key" class="nav-link p-3 rounded-lg hover:bg-gray-700">🔑 نماذج الإجابة</a>
+                <a href="#correction" class="nav-link p-3 rounded-lg hover:bg-gray-700">📷 التصحيح</a>
+                <a href="#history" class="nav-link p-3 rounded-lg hover:bg-gray-700">📚 السجلات</a>
+                <a href="#reports" class="nav-link p-3 rounded-lg hover:bg-gray-700">🖨️ التقارير</a>
+                <a href="#stats" class="nav-link p-3 rounded-lg hover:bg-gray-700">📈 الإحصائيات</a>
+                <a href="#settings" class="nav-link p-3 rounded-lg hover:bg-gray-700">⚙️ الإعدادات</a>
             </nav>
         </aside>
 
         <!-- Main Content -->
         <main class="flex-1 p-4 md:p-8">
-            <button id="menu-button" class="md:hidden fixed top-4 right-4 z-20 p-2 bg-gray-800 text-white rounded-md" onclick="toggleSidebar()">
+            <button id="menu-button" class="md:hidden fixed top-4 right-4 z-20 p-2 bg-gray-800 text-white rounded-md">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
                 </svg>
@@ -140,7 +140,7 @@
 
                 <!-- قسم الإرشادات -->
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                    <button onclick="toggleInstructions()" class="w-full text-right">
+                    <button id="toggle-instructions-btn" class="w-full text-right">
                         <div class="flex justify-between items-center">
                             <h2 class="text-2xl font-bold text-gray-800 flex items-center">
                                 📖 دليل البدء السريع
@@ -150,9 +150,9 @@
                     </button>
                     <div id="instructions-content" class="collapsible-content mt-4 pt-4 border-t">
                         <ol class="list-decimal list-inside space-y-4 text-gray-700">
-                            <li>اذهب إلى قسم <a href="#" onclick="showSection('students')" class="text-blue-600 font-bold">"الطلاب"</a> واستورد قائمة طلابك.</li>
-                            <li>اذهب إلى قسم <a href="#" onclick="showSection('answer-key')" class="text-blue-600 font-bold">"نماذج الإجابة"</a> وجهّز نموذج الإجابة الصحيحة.</li>
-                            <li>انتقل إلى قسم <a href="#" onclick="showSection('correction')" class="text-blue-600 font-bold">"التصحيح"</a> وابدأ العمل!</li>
+                            <li>اذهب إلى قسم <a href="#students" class="quick-start-link text-blue-600 font-bold">"الطلاب"</a> واستورد قائمة طلابك.</li>
+                            <li>اذهب إلى قسم <a href="#answer-key" class="quick-start-link text-blue-600 font-bold">"نماذج الإجابة"</a> وجهّز نموذج الإجابة الصحيحة.</li>
+                            <li>انتقل إلى قسم <a href="#correction" class="quick-start-link text-blue-600 font-bold">"التصحيح"</a> وابدأ العمل!</li>
                         </ol>
                     </div>
                 </div>
@@ -179,12 +179,10 @@
                         <div class="flex justify-between items-center mb-4">
                             <h3 class="text-lg font-semibold text-gray-800">📋 قائمة الطلاب</h3>
                             <div class="flex gap-2">
-                                <button onclick="toggleMultipleCorrection()" id="multiCorrectionBtn"
-                                        class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
+                                <button id="multiCorrectionBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">
                                     🔄 تصحيح متعدد
                                 </button>
-                                <button onclick="clearStudentsList()" 
-                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">
+                                <button id="clearStudentsBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">
                                     🗑️ مسح القائمة
                                 </button>
                             </div>
@@ -251,9 +249,9 @@
                         <label for="answerKeyModel" class="block text-sm font-medium text-gray-700 mb-2">اختر أو أنشئ نموذج إجابة:</label>
                         <div class="flex gap-2">
                             <select id="answerKeyModel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></select>
-                            <button onclick="manageModels('new')" title="نموذج جديد" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded-lg">➕</button>
-                            <button onclick="manageModels('rename')" title="إعادة تسمية" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 rounded-lg">✏️</button>
-                            <button onclick="manageModels('delete')" title="حذف النموذج" class="bg-red-500 hover:bg-red-600 text-white px-3 rounded-lg">🗑️</button>
+                            <button id="newModelBtn" title="نموذج جديد" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded-lg">➕</button>
+                            <button id="renameModelBtn" title="إعادة تسمية" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 rounded-lg">✏️</button>
+                            <button id="deleteModelBtn" title="حذف النموذج" class="bg-red-500 hover:bg-red-600 text-white px-3 rounded-lg">🗑️</button>
                         </div>
                     </div>
 
@@ -289,16 +287,16 @@
                     <div class="mt-4 pt-4 border-t">
                          <h3 class="text-lg font-bold text-gray-800 mb-3">إجراءات النموذج</h3>
                          <div class="flex flex-wrap gap-2">
-                            <button onclick="showManualEntry()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">✏️ إعداد الإجابات يدوياً</button>
-                            <button onclick="scanAnswerKey()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📷 تصوير نموذج محلول</button>
-                            <button onclick="printBlankSheet()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🖨️ طباعة نموذج فارغ</button>
+                            <button id="manualEntryBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">✏️ إعداد الإجابات يدوياً</button>
+                            <button id="scanKeyBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📷 تصوير نموذج محلول</button>
+                            <button id="printSheetBtn" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🖨️ طباعة نموذج فارغ</button>
                         </div>
                     </div>
 
                     <div id="answerSheet" class="hidden mt-6 pt-4 border-t">
                         <h3 class="text-xl font-bold text-gray-800 mb-4">📝 أدخل الإجابات الصحيحة يدوياً:</h3>
                         <div id="answersGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4"></div>
-                        <button onclick="saveCorrectAnswers()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">حفظ الإجابات</button>
+                        <button id="saveAnswersBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">حفظ الإجابات</button>
                     </div>
                 </div>
             </section>
@@ -317,8 +315,8 @@
                     </div>
 
                     <div id="uploadOptions" class="flex flex-col sm:flex-row gap-4 my-6">
-                        <button onclick="showCameraSection()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">📹 استخدام الكاميرا</button>
-                        <button onclick="showUploadSection()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">📁 تحميل صورة</button>
+                        <button id="showCameraBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">📹 استخدام الكاميرا</button>
+                        <button id="showUploadBtn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors">📁 تحميل صورة</button>
                     </div>
                     <div id="cameraSection" class="hidden">
                         <div class="camera-container mb-4">
@@ -328,7 +326,7 @@
                             <div id="countdown" class="countdown-text"></div>
                         </div>
                         <div class="text-center">
-                            <button onclick="stopCamera()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">⏹️ إيقاف الكاميرا</button>
+                            <button id="stopCameraBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">⏹️ إيقاف الكاميرا</button>
                         </div>
                     </div>
                     <div id="uploadSection" class="hidden">
@@ -344,7 +342,7 @@
                             <p class="text-sm text-purple-700">سيتم تصحيح أوراق جميع الطلاب في قائمة "في الانتظار" بالتتابع. صوّر الأوراق بالترتيب وسيتم الانتقال للطالب التالي تلقائياً بعد حفظ النتيجة.</p>
                         </div>
                         <div class="text-center">
-                            <button onclick="startMultipleCorrection()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 text-lg">
+                            <button id="startMultiBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2 text-lg">
                                 🚀 بدء التصحيح المتعدد
                             </button>
                         </div>
@@ -370,16 +368,16 @@
                             </div>
                         </div>
                         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                            <button onclick="skipCurrentStudent()" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">⏭️ تخطي هذا الطالب</button>
-                            <button onclick="stopMultipleCorrection()" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">⏹️ إنهاء التصحيح المتعدد</button>
+                            <button id="skipStudentBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">⏭️ تخطي هذا الطالب</button>
+                            <button id="stopMultiBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">⏹️ إنهاء التصحيح المتعدد</button>
                         </div>
                     </div>
                     <div id="multiCorrectionReport" class="hidden mt-6 bg-gray-50 rounded-lg p-4">
                         <h3 class="text-lg font-semibold text-gray-800 mb-3">📊 تقرير التصحيح المتعدد</h3>
                         <div id="multiReportContent"></div>
                         <div class="mt-4 flex gap-4 justify-center">
-                            <button onclick="exportMultiReport()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📄 تصدير التقرير</button>
-                            <button onclick="resetMultiCorrection()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🔄 تصحيح جديد</button>
+                            <button id="exportMultiReportBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📄 تصدير التقرير</button>
+                            <button id="resetMultiBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🔄 تصحيح جديد</button>
                         </div>
                     </div>
                 </div>
@@ -394,7 +392,7 @@
                         <div id="verificationSection">
                             <h3 class="text-xl font-bold text-gray-800 mb-4">🔍 تأكيد الإجابات</h3>
                             <div id="verificationGrid" class="grid grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2"></div>
-                             <button onclick="confirmAnswers()" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">✅ تأكيد وحساب النتيجة</button>
+                             <button id="confirmAnswersBtn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">✅ تأكيد وحساب النتيجة</button>
                         </div>
                      </div>
                 </div>
@@ -430,8 +428,8 @@
                     </div>
                     <div id="detailedResults" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6"></div>
                     <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                        <button onclick="saveToHistory()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">💾 حفظ وبدء ورقة جديدة</button>
-                        <button onclick="exportResults()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">📄 تصدير النتيجة</button>
+                        <button id="saveAndNewBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">💾 حفظ وبدء ورقة جديدة</button>
+                        <button id="exportResultBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium flex items-center justify-center gap-2">📄 تصدير النتيجة</button>
                     </div>
                 </div>
             </section>
@@ -443,8 +441,8 @@
                      <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-bold text-gray-800">📚 سجل النتائج المحفوظة</h3>
                         <div class="flex gap-2">
-                            <button onclick="exportAllResults()" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium text-sm">📊 تصدير ملخص النتائج</button>
-                             <button onclick="clearHistory()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">🗑️ مسح السجل</button>
+                            <button id="exportAllResultsBtn" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium text-sm">📊 تصدير ملخص النتائج</button>
+                             <button id="clearHistoryBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">🗑️ مسح السجل</button>
                         </div>
                     </div>
                     <div id="historyList" class="space-y-3"></div>
@@ -455,7 +453,7 @@
                      <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-bold text-gray-800">📋 سجل إجابات الطلاب (مفصل)</h3>
                         <div class="flex gap-2">
-                            <button onclick="exportDetailedAnswersLog()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg font-medium text-sm">📄 تصدير سجل الإجابات (Excel)</button>
+                            <button id="exportDetailedLogBtn" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg font-medium text-sm">📄 تصدير سجل الإجابات (Excel)</button>
                         </div>
                     </div>
                     <p class="text-sm text-gray-600">يحتوي هذا السجل على إجابة كل طالب لكل سؤال. استخدم زر التصدير لتحليل البيانات.</p>
@@ -479,7 +477,7 @@
                                     <select id="reportExamFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></select>
                                 </div>
                                 <div class="self-end">
-                                    <button onclick="generateClassReport()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">📊 إنشاء تقرير</button>
+                                    <button id="generateReportBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">📊 إنشاء تقرير</button>
                                 </div>
                             </div>
                         </div>
@@ -526,14 +524,14 @@
                                 <input id="setting-year" type="text" placeholder="العام الدراسي" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                                 <input id="setting-semester" type="text" placeholder="الفصل الدراسي" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                             </div>
-                            <button onclick="saveSettings()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">حفظ البيانات الأساسية</button>
+                            <button id="saveSettingsBtn" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">حفظ البيانات الأساسية</button>
                         </div>
                         
                         <!-- Data Management -->
                         <div class="bg-gray-50 p-4 rounded-lg">
                              <h3 class="font-semibold text-lg text-gray-800 mb-4">إدارة البيانات</h3>
                              <div class="flex flex-wrap gap-4">
-                                <button onclick="backupData()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📥 نسخ احتياطي للبيانات</button>
+                                <button id="backupBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📥 نسخ احتياطي للبيانات</button>
                                 <div>
                                     <label for="restoreFile" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg font-medium text-sm cursor-pointer">📤 استعادة نسخة احتياطية</label>
                                     <input type="file" id="restoreFile" class="hidden" accept=".json" onchange="restoreData(event)">
@@ -545,7 +543,7 @@
                         <div class="bg-red-50 p-4 rounded-lg border border-red-200">
                              <h3 class="font-semibold text-lg text-red-800 mb-2">منطقة الخطر</h3>
                              <p class="text-sm text-red-700 mb-4">سيؤدي هذا الإجراء إلى حذف جميع البيانات المحفوظة في التطبيق بشكل نهائي، بما في ذلك الطلاب، النماذج، والسجلات.</p>
-                             <button onclick="clearAllData()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🗑️ مسح جميع بيانات التطبيق</button>
+                             <button id="clearAllDataBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🗑️ مسح جميع بيانات التطبيق</button>
                         </div>
                     </div>
                 </div>
@@ -622,6 +620,25 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+             // Event Listeners Setup
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSection(e.currentTarget.getAttribute('href').substring(1));
+                });
+            });
+
+            document.querySelectorAll('.quick-start-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    showSection(e.currentTarget.getAttribute('href').substring(1));
+                });
+            });
+
+            document.getElementById('menu-button').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebar-overlay').addEventListener('click', toggleSidebar);
+            document.getElementById('toggle-instructions-btn').addEventListener('click', toggleInstructions);
+
             document.getElementById('studentsFileInput').addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) parseStudentsFile(file);
@@ -638,7 +655,38 @@
                     selectDifferentStudent();
                 }
              });
-             document.getElementById('examDate').valueAsDate = new Date();
+
+            // Button listeners
+            document.getElementById('multiCorrectionBtn').addEventListener('click', toggleMultipleCorrection);
+            document.getElementById('clearStudentsBtn').addEventListener('click', clearStudentsList);
+            document.getElementById('newModelBtn').addEventListener('click', () => manageModels('new'));
+            document.getElementById('renameModelBtn').addEventListener('click', () => manageModels('rename'));
+            document.getElementById('deleteModelBtn').addEventListener('click', () => manageModels('delete'));
+            document.getElementById('manualEntryBtn').addEventListener('click', showManualEntry);
+            document.getElementById('scanKeyBtn').addEventListener('click', scanAnswerKey);
+            document.getElementById('printSheetBtn').addEventListener('click', printBlankSheet);
+            document.getElementById('saveAnswersBtn').addEventListener('click', saveCorrectAnswers);
+            document.getElementById('showCameraBtn').addEventListener('click', showCameraSection);
+            document.getElementById('showUploadBtn').addEventListener('click', showUploadSection);
+            document.getElementById('stopCameraBtn').addEventListener('click', stopCamera);
+            document.getElementById('startMultiBtn').addEventListener('click', startMultipleCorrection);
+            document.getElementById('skipStudentBtn').addEventListener('click', skipCurrentStudent);
+            document.getElementById('stopMultiBtn').addEventListener('click', stopMultipleCorrection);
+            document.getElementById('exportMultiReportBtn').addEventListener('click', exportMultiReport);
+            document.getElementById('resetMultiBtn').addEventListener('click', resetMultiCorrection);
+            document.getElementById('confirmAnswersBtn').addEventListener('click', confirmAnswers);
+            document.getElementById('saveAndNewBtn').addEventListener('click', saveToHistory);
+            document.getElementById('exportResultBtn').addEventListener('click', exportResults);
+            document.getElementById('exportAllResultsBtn').addEventListener('click', exportAllResults);
+            document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
+            document.getElementById('exportDetailedLogBtn').addEventListener('click', exportDetailedAnswersLog);
+            document.getElementById('generateReportBtn').addEventListener('click', generateClassReport);
+            document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+            document.getElementById('backupBtn').addEventListener('click', backupData);
+            document.getElementById('clearAllDataBtn').addEventListener('click', clearAllData);
+            document.getElementById('subjectName').addEventListener('input', () => {
+                document.getElementById('examName').value = document.getElementById('subjectName').value;
+            });
 
 
             loadInitialUI();
@@ -809,17 +857,24 @@
                         ${student.corrected ? `<div class="text-xs text-green-600">النتيجة: ${student.result.percentage} (${student.result.score})</div>` : `<div class="text-xs text-yellow-600">في الانتظار</div>`}
                     </div>
                     <div>
-                        ${!student.corrected && !isMultipleCorrectionMode ? `<button onclick="selectStudent(${student.id})" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">اختيار</button>` : ''}
+                        ${!student.corrected && !isMultipleCorrectionMode ? `<button data-id="${student.id}" class="select-student-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">اختيار</button>` : ''}
                     </div>
                 </div>
             `).join('');
         }
         
+        document.getElementById('studentsList').addEventListener('click', (e) => {
+            if (e.target.classList.contains('select-student-btn')) {
+                selectStudent(parseInt(e.target.dataset.id));
+            }
+        });
+
         function selectStudent(studentId) {
             currentStudent = studentsList.find(s => s.id === parseInt(studentId));
             if (currentStudent) {
                 document.getElementById('correctionStudentSelect').value = currentStudent.id;
                 showNotification(`تم اختيار الطالب: ${currentStudent.name}. يمكنك الآن بدء التصحيح.`, 'success');
+                showSection('correction');
             }
         }
 
@@ -1061,7 +1116,6 @@
                 
                 if (isScanningForKey) {
                     isScanningForKey = false;
-                    document.getElementById('capturedSection').classList.add('hidden');
                     const scannedAnswers = data.answers;
                     const questionCount = parseInt(document.getElementById('questionCount').value);
                     for (let i = 0; i < questionCount; i++) {
@@ -1464,8 +1518,9 @@
             const classFilter = document.getElementById('reportClassFilter').value;
             const examFilter = document.getElementById('reportExamFilter').value;
             const title = `تقرير أداء ${examFilter || 'الاختبار'}`;
-            const container = document.getElementById('report-container').cloneNode(true);
-            const reportButton = container.querySelector('button');
+            
+            const reportContentEl = document.getElementById('report-container').cloneNode(true);
+            const reportButton = reportContentEl.querySelector('button');
             if(reportButton) reportButton.remove();
 
             const studentLogs = detailedAnswersLog.filter(log => 
@@ -1494,9 +1549,9 @@
                 <img src="${chartImage}" class="mx-auto" style="max-width: 300px;"/>
             `;
             
-            container.innerHTML += studentTable;
+            reportContentEl.innerHTML += studentTable;
 
-            printContent(container.innerHTML, title);
+            printContent(reportContentEl.innerHTML, title);
         }
 
         function printContent(content, title) {
@@ -1514,6 +1569,7 @@
                     <div style="font-size: 0.9rem; color: #555;">
                         <span>${classFilter ? `الفصل: ${classFilter}`: ''}</span>
                         <span>${examFilter ? ` | اختبار: ${examFilter}` : ''}</span>
+                        <p class="mt-2">المعلم: ${settings.teacher || ''} | مدير المدرسة: ${settings.director || ''}</p>
                     </div>
                 </div>
             `;
@@ -1744,23 +1800,5 @@
                 classPerformances[r.studentClass].total += parseInt(r.percentage);
                 classPerformances[r.studentClass].count++;
             });
-            const classLabels = Object.keys(classPerformances).sort();
-            const classAverages = classLabels.map(c => Math.round(classPerformances[c].total / classPerformances[c].count));
-            classChart = new Chart(classCtx, {
-                type: 'bar',
-                data: {
-                    labels: classLabels,
-                    datasets: [{
-                        label: 'متوسط الدرجات',
-                        data: classAverages,
-                        backgroundColor: '#4f46e5',
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100 } } }
-            });
-        }
-
-    </script>
-</body>
-</html>
+            const class
 
