@@ -75,7 +75,7 @@
         /* Print-specific styles */
         @media print {
             body { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
-            button, input, select, aside, #menu-button { display: none !important; }
+            button, input, select, aside, #menu-button, #printReportBtn { display: none !important; } /* Hide print button in print view */
             main { margin: 0 !important; padding: 0 !important; }
             .app-section { display: none !important; } /* Hide all sections */
             #printable-report-content { display: block !important; } /* Show only print content */
@@ -109,16 +109,21 @@
             .rounded-lg { border-radius: 0.5rem !important; }
             .w-full { width: 100% !important; }
             .mx-auto { margin-left: auto !important; margin-right: auto !important; }
-            table { border-collapse: collapse !important; width: 100% !important; margin-top: 15px !important; }
-            td, th { border: 1px solid #ddd !important; padding: 8px !important; text-align: center !important; }
+            table { border-collapse: collapse !important; width: 100% !important; margin-top: 15px !important; page-break-inside: auto !important;}
+            tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+            thead { display: table-header-group !important; } /* Repeat header on each page */
+            td, th { border: 1px solid #ddd !important; padding: 6px !important; text-align: center !important; font-size: 0.8rem !important; }
             th { background-color: #f2f2f2 !important; font-weight: bold !important;}
             tr:nth-child(even){background-color: #f9f9f9 !important;}
+            img { max-width: 100% !important; height: auto !important; page-break-inside: avoid !important;}
+            .page-break { page-break-before: always !important; }
              /* Ensure colored backgrounds print */
             .bg-blue-100 { background-color: #DBEAFE !important; }
             .bg-green-100 { background-color: #DCFCE7 !important; }
             .bg-red-100 { background-color: #FEE2E2 !important; }
             .bg-gray-50 { background-color: #F9FAFB !important; }
             .bg-gray-100 { background-color: #F3F4F6 !important; }
+            .bg-yellow-100 { background-color: #FEF3C7 !important; }
 
             /* Specific report styles */
             #printable-report-content .text-red-700 { color: #b91c1c !important; }
@@ -127,6 +132,10 @@
             #printable-report-content .text-green-600 { color: #16a34a !important; }
             #printable-report-content .text-blue-600 { color: #2563eb !important; }
             #printable-report-content .font-semibold { font-weight: 600 !important; }
+            #printable-report-content .font-bold { font-weight: 700 !important; }
+            #printable-report-content .max-h-60 { max-height: none !important; } /* Allow table to expand */
+            #printable-report-content .overflow-y-auto { overflow-y: visible !important; }
+            #printable-report-content .pr-2 { padding-right: 0 !important; }
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -519,7 +528,7 @@
                              <button id="clearHistoryBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">🗑️ مسح السجل</button>
                         </div>
                     </div>
-                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div id="historyFilters" class="bg-gray-50 rounded-lg p-4 mb-4">
                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label for="historyClassFilter" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالفصل:</label>
@@ -652,7 +661,7 @@
                     </div>
                 </div>
             </section>
-             <!-- Div for printable report content -->
+             <!-- Div for printable report content - kept outside sections for simplicity in print function -->
             <div id="printable-report-content" class="hidden"></div>
 
         </main>
@@ -688,20 +697,17 @@
         function getFromStorage(key, defaultValue) {
             try {
                 const storedValue = localStorage.getItem(key);
-                // Basic check for valid JSON start
                 if (storedValue && (storedValue.startsWith('{') || storedValue.startsWith('['))) {
                     return JSON.parse(storedValue);
                 }
-                 // Handle potential corrupted primitive values or empty strings
                  if (storedValue === null || storedValue === undefined || storedValue === "") {
                      return defaultValue;
                  }
-                 // Attempt to parse even if not starting with { or [ - might be a primitive
                  try { return JSON.parse(storedValue); } catch { return defaultValue; }
 
             } catch (e) {
                 console.error(`Error parsing ${key} from localStorage:`, e);
-                localStorage.removeItem(key); // Remove corrupted data
+                localStorage.removeItem(key); 
                 return defaultValue;
             }
         }
@@ -727,7 +733,7 @@
                     targetSection.classList.add('active');
                 } else {
                      console.error("Section not found:", sectionId);
-                     document.getElementById('dashboard')?.classList.add('active'); // Fallback to dashboard
+                     document.getElementById('dashboard')?.classList.add('active'); 
                 }
 
 
@@ -741,21 +747,21 @@
                 if (sectionId === 'correction') populateCorrectionStudentSelect();
                 if (sectionId === 'reports') populateReportFilters();
                 if (sectionId === 'stats') {
-                    populateStatsFilters(); // Populate filters for stats
-                    updateGlobalStats(); // Update stats on showing section
+                    populateStatsFilters(); 
+                    updateGlobalStats(); 
                 }
-                if (sectionId === 'students') displayStudentsList(); // Ensure list shows when navigating
-                 if (sectionId === 'history') populateHistoryFilters(); // Populate filters for history
+                if (sectionId === 'students') displayStudentsList(); 
+                 if (sectionId === 'history') populateHistoryFilters(); 
 
 
                 if (sectionId !== 'correction') document.getElementById('multipleCorrectionSection')?.classList.add('hidden');
                 
-                if (window.innerWidth < 768) { // md breakpoint
+                if (window.innerWidth < 768) { 
                     toggleSidebar();
                 }
+                 window.location.hash = sectionId; // Update hash for deep linking/refresh
             } catch(e) {
                  console.error("Error in showSection:", e);
-                 // Fallback to dashboard on error
                  document.querySelectorAll('.app-section').forEach(section => section.classList.remove('active'));
                  document.getElementById('dashboard')?.classList.add('active');
                  document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
@@ -766,7 +772,26 @@
 
         document.addEventListener('DOMContentLoaded', () => {
              try {
-                // Event Listeners Setup - Moved here for robust initialization
+                // Event Listeners Setup - More Robust
+                 const addSafeListener = (selector, event, handler) => {
+                     const element = document.querySelector(selector);
+                     if (element) {
+                         element.addEventListener(event, handler);
+                     } else {
+                         console.warn(`Element not found for selector: ${selector}`);
+                     }
+                 };
+
+                 const addSafeListenerById = (id, event, handler) => {
+                     const element = document.getElementById(id);
+                     if (element) {
+                         element.addEventListener(event, handler);
+                     } else {
+                          console.warn(`Element not found for ID: ${id}`);
+                     }
+                 };
+
+
                 document.querySelectorAll('.nav-link').forEach(link => {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -785,8 +810,7 @@
                     });
                 });
                 
-                 // Event delegation for dynamically added buttons
-                document.getElementById('studentsList')?.addEventListener('click', (e) => {
+                addSafeListenerById('studentsList', 'click', (e) => {
                     if (e.target.classList.contains('select-student-btn')) {
                         const studentId = e.target.dataset.id;
                          if(studentId) selectStudent(studentId);
@@ -797,27 +821,21 @@
                     }
                 });
 
+                addSafeListenerById('menu-button', 'click', toggleSidebar);
+                addSafeListenerById('sidebar-overlay', 'click', toggleSidebar);
+                addSafeListenerById('toggle-instructions-btn', 'click', toggleInstructions);
 
-                // Mobile Sidebar Toggle
-                document.getElementById('menu-button')?.addEventListener('click', toggleSidebar);
-                document.getElementById('sidebar-overlay')?.addEventListener('click', toggleSidebar);
-
-                // Instructions Toggle
-                document.getElementById('toggle-instructions-btn')?.addEventListener('click', toggleInstructions);
-
-                // File Inputs
-                document.getElementById('studentsFileInput')?.addEventListener('change', (e) => {
+                addSafeListenerById('studentsFileInput', 'change', (e) => {
                     const file = e.target.files[0];
                     if (file) parseStudentsFile(file);
                 });
-                document.getElementById('imageInput')?.addEventListener('change', (e) => {
+                addSafeListenerById('imageInput', 'change', (e) => {
                     const file = e.target.files[0];
                     if (file) handleImageFile(file);
                 });
 
-                // Selects and Inputs with side effects
-                document.getElementById('answerKeyModel')?.addEventListener('change', switchModel);
-                document.getElementById('correctionStudentSelect')?.addEventListener('change', (e) => {
+                addSafeListenerById('answerKeyModel', 'change', switchModel);
+                addSafeListenerById('correctionStudentSelect', 'change', (e) => {
                     if(e.target.value) {
                         selectStudent(parseInt(e.target.value));
                     } else {
@@ -825,51 +843,46 @@
                     }
                  });
                  
-                 // Link subject/exam/date fields in Answer Key section
-                 document.getElementById('subjectName')?.addEventListener('input', updateModelData);
-                 document.getElementById('examName')?.addEventListener('input', updateModelData);
-                 document.getElementById('examDate')?.addEventListener('change', updateModelData);
-                 document.getElementById('questionCount')?.addEventListener('change', showManualEntry); 
-                 document.getElementById('optionsCount')?.addEventListener('change', showManualEntry); 
+                 addSafeListenerById('subjectName', 'input', updateModelData);
+                 addSafeListenerById('examName', 'input', updateModelData);
+                 addSafeListenerById('examDate', 'change', updateModelData);
+                 addSafeListenerById('questionCount', 'change', showManualEntry); 
+                 addSafeListenerById('optionsCount', 'change', showManualEntry); 
 
-
-                // Button listeners (check for element existence)
-                document.getElementById('multiCorrectionBtn')?.addEventListener('click', toggleMultipleCorrection);
-                document.getElementById('clearStudentsBtn')?.addEventListener('click', clearStudentsList);
-                document.getElementById('newModelBtn')?.addEventListener('click', () => manageModels('new'));
-                document.getElementById('renameModelBtn')?.addEventListener('click', () => manageModels('rename'));
-                document.getElementById('deleteModelBtn')?.addEventListener('click', () => manageModels('delete'));
-                document.getElementById('manualEntryBtn')?.addEventListener('click', showManualEntry);
-                document.getElementById('scanKeyBtn')?.addEventListener('click', scanAnswerKey);
-                document.getElementById('printSheetBtn')?.addEventListener('click', printBlankSheet);
-                document.getElementById('saveAnswersBtn')?.addEventListener('click', saveCorrectAnswers);
-                document.getElementById('showCameraBtn')?.addEventListener('click', showCameraSection);
-                document.getElementById('showUploadBtn')?.addEventListener('click', showUploadSection);
-                document.getElementById('stopCameraBtn')?.addEventListener('click', stopCamera);
-                document.getElementById('startMultiBtn')?.addEventListener('click', startMultipleCorrection);
-                document.getElementById('skipStudentBtn')?.addEventListener('click', skipCurrentStudent);
-                document.getElementById('stopMultiBtn')?.addEventListener('click', stopMultipleCorrection);
-                document.getElementById('exportMultiReportBtn')?.addEventListener('click', exportMultiReport);
-                document.getElementById('resetMultiBtn')?.addEventListener('click', resetMultiCorrection);
-                document.getElementById('confirmAnswersBtn')?.addEventListener('click', confirmAnswers);
-                document.getElementById('saveAndNewBtn')?.addEventListener('click', saveToHistory);
-                document.getElementById('exportResultBtn')?.addEventListener('click', exportResults);
-                document.getElementById('exportAllResultsBtn')?.addEventListener('click', exportAllResults);
-                document.getElementById('clearHistoryBtn')?.addEventListener('click', clearHistory);
-                document.getElementById('exportDetailedLogBtn')?.addEventListener('click', exportDetailedAnswersLog);
-                document.getElementById('generateReportBtn')?.addEventListener('click', generateClassReport);
-                document.getElementById('saveSettingsBtn')?.addEventListener('click', saveSettings);
-                document.getElementById('backupBtn')?.addEventListener('click', backupData);
-                document.getElementById('clearAllDataBtn')?.addEventListener('click', clearAllData);
-                document.getElementById('restoreFile')?.addEventListener('change', restoreData);
-                document.getElementById('searchStudentName')?.addEventListener('keyup', filterStudentsList);
-                document.getElementById('filterClass')?.addEventListener('change', filterStudentsList);
-                document.getElementById('filterStatus')?.addEventListener('change', filterStudentsList);
-                document.getElementById('changeCorrectionStudentBtn')?.addEventListener('click', selectDifferentStudent);
-                document.getElementById('filterHistoryBtn')?.addEventListener('click', updateHistoryDisplay);
-                document.getElementById('updateStatsBtn')?.addEventListener('click', updateGlobalStats);
-
-
+                addSafeListenerById('multiCorrectionBtn', 'click', toggleMultipleCorrection);
+                addSafeListenerById('clearStudentsBtn', 'click', clearStudentsList);
+                addSafeListenerById('newModelBtn', 'click', () => manageModels('new'));
+                addSafeListenerById('renameModelBtn', 'click', () => manageModels('rename'));
+                addSafeListenerById('deleteModelBtn', 'click', () => manageModels('delete'));
+                addSafeListenerById('manualEntryBtn', 'click', showManualEntry);
+                addSafeListenerById('scanKeyBtn', 'click', scanAnswerKey);
+                addSafeListenerById('printSheetBtn', 'click', printBlankSheet);
+                addSafeListenerById('saveAnswersBtn', 'click', saveCorrectAnswers);
+                addSafeListenerById('showCameraBtn', 'click', showCameraSection);
+                addSafeListenerById('showUploadBtn', 'click', showUploadSection);
+                addSafeListenerById('stopCameraBtn', 'click', stopCamera);
+                addSafeListenerById('startMultiBtn', 'click', startMultipleCorrection);
+                addSafeListenerById('skipStudentBtn', 'click', skipCurrentStudent);
+                addSafeListenerById('stopMultiBtn', 'click', stopMultipleCorrection);
+                addSafeListenerById('exportMultiReportBtn', 'click', exportMultiReport);
+                addSafeListenerById('resetMultiBtn', 'click', resetMultiCorrection);
+                addSafeListenerById('confirmAnswersBtn', 'click', confirmAnswers);
+                addSafeListenerById('saveAndNewBtn', 'click', saveToHistory);
+                addSafeListenerById('exportResultBtn', 'click', exportResults);
+                addSafeListenerById('exportAllResultsBtn', 'click', exportAllResults);
+                addSafeListenerById('clearHistoryBtn', 'click', clearHistory);
+                addSafeListenerById('exportDetailedLogBtn', 'click', exportDetailedAnswersLog);
+                addSafeListenerById('generateReportBtn', 'click', generateClassReport);
+                addSafeListenerById('saveSettingsBtn', 'click', saveSettings);
+                addSafeListenerById('backupBtn', 'click', backupData);
+                addSafeListenerById('clearAllDataBtn', 'click', clearAllData);
+                addSafeListenerById('restoreFile', 'change', restoreData);
+                addSafeListenerById('searchStudentName', 'keyup', filterStudentsList);
+                addSafeListenerById('filterClass', 'change', filterStudentsList);
+                addSafeListenerById('filterStatus', 'change', filterStudentsList);
+                addSafeListenerById('changeCorrectionStudentBtn', 'click', selectDifferentStudent);
+                addSafeListenerById('filterHistoryBtn', 'click', updateHistoryDisplay);
+                addSafeListenerById('updateStatsBtn', 'click', updateGlobalStats);
 
                  const examDateInput = document.getElementById('examDate');
                  if(examDateInput) examDateInput.valueAsDate = new Date();
@@ -887,7 +900,6 @@
              console.log("Loading initial UI...");
             settings = getFromStorage('appSettings', {});
             studentsList = getFromStorage('studentsList', []);
-            // Ensure student objects have a status
             studentsList = studentsList.map(s => ({ ...s, status: s.status || 'pending' })); 
             resultsHistory = getFromStorage('examResults', []);
             detailedAnswersLog = getFromStorage('detailedAnswersLog', []);
@@ -915,7 +927,6 @@
              else {
                  document.getElementById('detailedHistorySection')?.classList.add('hidden');
              }
-             // Ensure initial section is shown correctly
              const initialSection = window.location.hash ? window.location.hash.substring(1) : 'dashboard';
              showSection(initialSection);
              console.log("Initial UI Load Complete.");
@@ -1707,35 +1718,42 @@
             const historySection = document.getElementById('historySection');
              const classFilter = document.getElementById('historyClassFilter')?.value;
              const examFilter = document.getElementById('historyExamFilter')?.value;
+             const historyFiltersDiv = document.getElementById('historyFilters');
 
-            if(!historyList || !historySection) return;
+
+            if(!historyList || !historySection || !historyFiltersDiv) return;
             
+            // Keep filters visible if there's any history at all
+            historyFiltersDiv.classList.toggle('hidden', resultsHistory.length === 0);
+
             const filteredHistory = resultsHistory.filter(r => 
                 (!classFilter || r.studentClass === classFilter) &&
                 (!examFilter || r.examName === examFilter)
             );
 
 
-            historySection.classList.toggle('hidden', filteredHistory.length === 0);
-            if (filteredHistory.length === 0) {
+            historySection.classList.toggle('hidden', resultsHistory.length === 0); // Hide whole section only if empty
+            if (filteredHistory.length === 0 && resultsHistory.length > 0) { // Show message if filters yield no results
                 historyList.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد نتائج تطابق الفلتر المحدد.</p>';
-                return;
-            }
-            historyList.innerHTML = filteredHistory.map(r => `
-                <div class="bg-gray-50 rounded-lg p-3 border-r-4 border-blue-500">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h4 class="font-semibold">${r.studentName}</h4>
-                            <p class="text-sm text-gray-600">${r.examName || 'اختبار غير مسمى'} - ${r.examDate || 'بدون تاريخ'}</p>
-                        </div>
-                        <div class="text-left">
-                            <div class="text-lg font-bold text-blue-600">${r.percentage || '0%'}</div>
-                            <div class="text-sm font-semibold text-gray-700">(${r.score || '0/0'})</div>
-                            <div class="text-xs text-gray-600">${r.grade || '-'}</div>
+            } else if (filteredHistory.length === 0 && resultsHistory.length === 0){
+                historyList.innerHTML = ''; // Hide list if truly empty
+            } else {
+                historyList.innerHTML = filteredHistory.map(r => `
+                    <div class="bg-gray-50 rounded-lg p-3 border-r-4 border-blue-500">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h4 class="font-semibold">${r.studentName}</h4>
+                                <p class="text-sm text-gray-600">${r.examName || 'اختبار غير مسمى'} - ${r.examDate || 'بدون تاريخ'}</p>
+                            </div>
+                            <div class="text-left">
+                                <div class="text-lg font-bold text-blue-600">${r.percentage || '0%'}</div>
+                                <div class="text-sm font-semibold text-gray-700">(${r.score || '0/0'})</div>
+                                <div class="text-xs text-gray-600">${r.grade || '-'}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            }
         }
         
         function exportResults() {
@@ -1750,25 +1768,44 @@
         }
 
         function exportAllResults() {
-            if (resultsHistory.length === 0) return;
+             const classFilter = document.getElementById('historyClassFilter')?.value;
+             const examFilter = document.getElementById('historyExamFilter')?.value;
+             const filteredHistory = resultsHistory.filter(r => 
+                 (!classFilter || r.studentClass === classFilter) &&
+                 (!examFilter || r.examName === examFilter)
+             );
+            if (filteredHistory.length === 0) {
+                 showNotification("لا توجد نتائج مطابقة للفلتر لتصديرها.", "info");
+                 return;
+             }
             try {
                 const wb = XLSX.utils.book_new();
-                const ws = XLSX.utils.json_to_sheet(resultsHistory);
+                const ws = XLSX.utils.json_to_sheet(filteredHistory);
                 XLSX.utils.book_append_sheet(wb, ws, 'سجل النتائج');
-                XLSX.writeFile(wb, 'سجل_النتائج_الكامل.xlsx');
+                XLSX.writeFile(wb, 'سجل_النتائج_المفلتر.xlsx');
             } catch(e) {
-                 console.error("Error exporting all results:", e);
+                 console.error("Error exporting filtered results:", e);
                  showNotification("خطأ في تصدير ملخص النتائج.", "error");
             }
         }
 
         function exportDetailedAnswersLog() {
-            if (detailedAnswersLog.length === 0) { showNotification("لا يوجد سجل مفصل لتصديره.", "info"); return; }
+             const classFilter = document.getElementById('historyClassFilter')?.value;
+             const examFilter = document.getElementById('historyExamFilter')?.value;
+             const filteredLogs = detailedAnswersLog.filter(log => 
+                 (!classFilter || log.studentClass === classFilter) &&
+                 (!examFilter || log.examName === examFilter)
+             );
+
+            if (filteredLogs.length === 0) { 
+                showNotification("لا يوجد سجل مفصل مطابق للفلتر لتصديره.", "info"); 
+                return; 
+            }
             try {
-                const maxQuestions = Math.max(0, ...detailedAnswersLog.map(log => log.answers?.length || 0)); 
+                const maxQuestions = Math.max(0, ...filteredLogs.map(log => log.answers?.length || 0)); 
                 const headers = ['اسم الطالب', 'الفصل', 'اسم الاختبار', 'التاريخ', 'الدرجة'];
                 for(let i=1; i<= maxQuestions; i++) { headers.push(`س${i}`); }
-                const data = detailedAnswersLog.map(log => {
+                const data = filteredLogs.map(log => {
                     const row = {'اسم الطالب': log.studentName, 'الفصل': log.studentClass, 'اسم الاختبار': log.examName, 'التاريخ': log.examDate, 'الدرجة': log.score };
                     (log.answers || []).forEach((ans, i) => { row[`س${i+1}`] = ans; }); 
                     return row;
@@ -1776,9 +1813,9 @@
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.json_to_sheet(data, {header: headers});
                 XLSX.utils.book_append_sheet(wb, ws, 'سجل إجابات الطلاب');
-                XLSX.writeFile(wb, 'سجل_إجابات_الطلاب_المفصل.xlsx');
+                XLSX.writeFile(wb, 'سجل_إجابات_الطلاب_المفصل_المفلتر.xlsx');
             } catch(e) {
-                 console.error("Error exporting detailed log:", e);
+                 console.error("Error exporting filtered detailed log:", e);
                  showNotification("خطأ في تصدير سجل الإجابات.", "error");
             }
         }
@@ -1846,12 +1883,15 @@
             multiCorrectionResults.push({ student: multiCorrectionQueue[currentMultiIndex], status: 'completed', result });
             currentMultiIndex++;
             if (currentMultiIndex < multiCorrectionQueue.length) {
-                showCurrentMultiStudent(); // This will trigger the camera again via resetForNewSheet->startAutoCapture
+                showCurrentMultiStudent(); // Display next student info
+                // resetForNewSheet() will handle restarting the camera/capture
+                resetForNewSheet(); 
                 showNotification(`تم حفظ النتيجة. انتقل للطالب التالي: ${multiCorrectionQueue[currentMultiIndex].name}`, 'info');
             } else {
                 completeMultipleCorrection();
             }
         }
+
 
         function skipCurrentStudent() {
             multiCorrectionResults.push({ student: multiCorrectionQueue[currentMultiIndex], status: 'skipped', result: null });
@@ -2095,7 +2135,7 @@
              if(!reportContainerClone) return;
             const printButtonInClone = reportContainerClone.querySelector('#printReportBtn');
             if(printButtonInClone) printButtonInClone.remove();
-            let reportContent = reportContainerClone.innerHTML; // Contains summary + analysis table
+            let reportContentHTML = reportContainerClone.innerHTML; // Contains summary + analysis table HTML
              
             // Filter logs again to get student list for printing
             const studentLogs = detailedAnswersLog.filter(log => 
@@ -2129,7 +2169,8 @@
 
             // Generate chart images for printing
              const gradeChartImage = await getReportChartsAsImages(studentLogs, 'pie');
-             const classChartImage = await getReportChartsAsImages(studentLogs, 'bar', classFilter); // Pass classFilter for bar chart context
+             // For class chart in report, only show if no specific class is selected
+             const classChartImage = (!classFilter) ? await getReportChartsAsImages(studentLogs, 'bar') : null; 
 
 
             const studentTable = `
@@ -2138,7 +2179,7 @@
                     <thead><tr class="border-b-2 border-black"><th class="p-1">#</th><th class="p-1 text-right">اسم الطالب</th><th class="p-1">الفصل</th><th class="p-1">الدرجة</th><th class="p-1">النسبة</th><th class="p-1">التقدير</th></tr></thead>
                     <tbody>${studentListHTML}</tbody>
                 </table>
-                 <div style="page-break-before: always;"></div> <!-- Page break before charts -->
+                 <div class="page-break" style="page-break-before: always;"></div> <!-- Page break before charts -->
                  <h4 class="text-lg font-bold mt-6 mb-2">توزيع التقديرات</h4>
                 ${gradeChartImage ? `<img src="${gradeChartImage}" class="mx-auto block" style="max-width: 350px; margin-top: 10px;"/>` : '<p class="text-center text-gray-500">لا يمكن عرض رسم التقديرات.</p>'}
                 
@@ -2147,13 +2188,20 @@
                      <img src="${classChartImage}" class="mx-auto block" style="max-width: 500px; margin-top: 10px;"/>
                  ` : ''}
 
-                 ${absentCount > 0 ? `
-                     <h4 class="text-lg font-bold mt-6 mb-2">الطلاب الغائبون (${absentCount})</h4>
+                 ${absentStudents.length > 0 ? `
+                     <h4 class="text-lg font-bold mt-6 mb-2">الطلاب الغائبون (${absentStudents.length})</h4>
                      <ul class="list-decimal list-inside pr-4">${absentListHTML}</ul>
                  ` : ''}
             `;
             
-            printContent(reportContent + studentTable, title, fileName); // Combine analysis table and student table
+             // Use the separate div for print content
+             const printDiv = document.getElementById('printable-report-content');
+             if (printDiv) {
+                 printDiv.innerHTML = reportContentHTML + studentTable; 
+                 printContent(printDiv.innerHTML, title, fileName); // Pass the combined HTML
+             } else {
+                 console.error("Printable report content div not found.");
+             }
         }
 
         function printContent(content, title, fileName) {
@@ -2183,24 +2231,22 @@
             const fullContent = headerInfo + content;
             const win = window.open('', '_blank');
              if(win){
-                 // Added style block specifically for printing tables correctly
-                 // Included CSS for colors from the main style block
                  win.document.write(`
                     <html>
                         <head>
                             <title>${safeFileName}</title>
+                             <script src="https://cdn.tailwindcss.com"><\/script> 
                             <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
-                            <style>
-                                body { font-family:'Cairo', sans-serif; direction: rtl; margin: 20px; } 
-                                table { border-collapse: collapse !important; width: 100% !important; margin-top: 15px !important; page-break-inside: auto; } 
-                                tr { page-break-inside: avoid; page-break-after: auto; }
-                                thead { display: table-header-group; } /* Repeat header on each page */
-                                td, th { border: 1px solid #ddd !important; padding: 6px !important; text-align: center !important; font-size: 0.8rem; } 
+                             <style>
+                                body { font-family:'Cairo', sans-serif; direction: rtl; margin: 20px; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; } 
+                                table { border-collapse: collapse !important; width: 100% !important; margin-top: 15px !important; page-break-inside: auto !important; } 
+                                tr { page-break-inside: avoid !important; page-break-after: auto !important; }
+                                thead { display: table-header-group !important; } 
+                                td, th { border: 1px solid #ddd !important; padding: 6px !important; text-align: center !important; font-size: 0.8rem !important; } 
                                 th { background-color: #f2f2f2 !important; font-weight: bold !important;} 
                                 tr:nth-child(even){background-color: #f9f9f9 !important;} 
-                                img { max-width: 100%; height: auto; }
-                                .page-break { page-break-before: always; }
-                                /* Bring color styles directly here for printing */
+                                img { max-width: 100% !important; height: auto !important; page-break-inside: avoid !important;}
+                                .page-break { page-break-before: always !important; }
                                 .q-errors-high { background-color: #fee2e2 !important; color: #b91c1c !important; } 
                                 .q-errors-medium { background-color: #ffedd5 !important; color: #c2410c !important; } 
                                 .q-errors-low { background-color: #dcfce7 !important; color: #166534 !important; } 
@@ -2210,6 +2256,9 @@
                                 .bg-red-100 { background-color: #FEE2E2 !important; }
                                 .bg-gray-100 { background-color: #F3F4F6 !important; }
                                 .bg-yellow-100 { background-color: #FEF3C7 !important; }
+                                .bg-red-50 { background-color: #FEF2F2 !important; }
+                                .bg-green-50 { background-color: #F0FDF4 !important; }
+                                .bg-gray-50 { background-color: #F9FAFB !important; }
                                 .text-red-700 { color: #b91c1c !important; }
                                 .text-green-700 { color: #15803d !important; }
                                 .text-red-600 { color: #dc2626 !important; }
@@ -2217,10 +2266,28 @@
                                 .text-blue-600 { color: #2563eb !important; }
                                 .font-semibold { font-weight: 600 !important; }
                                 .font-bold { font-weight: 700 !important; }
-                                @media print { 
-                                    body { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; } 
-                                    button { display: none !important; } 
-                                }
+                                .text-xs { font-size: 0.7rem !important; }
+                                .text-sm { font-size: 0.8rem !important; }
+                                .text-lg { font-size: 1rem !important; }
+                                .text-xl { font-size: 1.1rem !important; }
+                                .text-2xl { font-size: 1.2rem !important; }
+                                .p-1 { padding: 0.25rem !important; }
+                                .p-2 { padding: 0.5rem !important; }
+                                .p-3 { padding: 0.75rem !important; }
+                                .mb-1 { margin-bottom: 0.25rem !important; }
+                                .mb-2 { margin-bottom: 0.5rem !important; }
+                                .mb-4 { margin-bottom: 1rem !important; }
+                                .mt-4 { margin-top: 1rem !important; }
+                                .mt-6 { margin-top: 1.5rem !important; }
+                                .gap-4 { gap: 1rem !important; }
+                                .grid { display: grid !important; }
+                                .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+                                .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+                                .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+                                .text-center { text-align: center !important; }
+                                .text-right { text-align: right !important; }
+                                .rounded-lg { border-radius: 0.5rem !important; }
+                                @media print { button { display: none !important; } }
                             </style>
                         </head>
                         <body class="p-4">${fullContent}</body>
@@ -2228,7 +2295,6 @@
                 win.document.close();
                 setTimeout(() => { 
                     try { win.print(); } catch(e){ console.error("Print error:", e); }
-                    // win.close(); // Keep window open for saving as PDF option
                  }, 500);
              } else {
                  showNotification("فشل فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.", "error");
@@ -2599,24 +2665,34 @@
                  return null; // Invalid chart type
             }
 
+            // Await chart rendering
             return new Promise((resolve) => {
-                let chartInstance = null;
-                try {
+                 let chartInstance = null;
+                 chartConfig.options = chartConfig.options || {};
+                 chartConfig.options.animation = {
+                     duration: 0, // No animation
+                     onComplete: () => {
+                         try {
+                             const dataUrl = chartInstance.toBase64Image();
+                             resolve(dataUrl);
+                         } catch (imgError) {
+                             console.error("Error converting chart to image:", imgError);
+                             resolve(null);
+                         } finally {
+                             if (chartInstance) chartInstance.destroy();
+                         }
+                     }
+                 };
+                 try {
                      chartInstance = new Chart(ctx, chartConfig);
-                     requestAnimationFrame(() => {
-                         requestAnimationFrame(() => { 
-                             try { resolve(chartInstance.toBase64Image()); } 
-                             catch (imgError) { console.error("Error converting chart to image:", imgError); resolve(null); } 
-                             finally { if (chartInstance) chartInstance.destroy(); }
-                         });
-                     });
-                } catch (chartError) {
+                 } catch (chartError) {
                      console.error("Error creating chart instance:", chartError);
-                     resolve(null); 
-                     if (chartInstance) chartInstance.destroy(); 
-                }
+                     resolve(null);
+                 }
             });
+
         }
+
 
     </script>
 </body>
