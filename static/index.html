@@ -67,10 +67,67 @@
             color: white;
         }
         /* Styles for report question analysis colors */
-        .q-errors-high { background-color: #fee2e2; color: #b91c1c; } /* Light red */
-        .q-errors-medium { background-color: #ffedd5; color: #c2410c; } /* Light orange */
-        .q-errors-low { background-color: #dcfce7; color: #166534; } /* Light green */
-        .q-errors-none { background-color: #f0fdf4; color: #16a34a; } /* Lighter green */
+        .q-errors-high { background-color: #fee2e2 !important; color: #b91c1c !important; } /* Light red */
+        .q-errors-medium { background-color: #ffedd5 !important; color: #c2410c !important; } /* Light orange */
+        .q-errors-low { background-color: #dcfce7 !important; color: #166534 !important; } /* Light green */
+        .q-errors-none { background-color: #f0fdf4 !important; color: #16a34a !important; } /* Lighter green */
+
+        /* Print-specific styles */
+        @media print {
+            body { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+            button, input, select, aside, #menu-button { display: none !important; }
+            main { margin: 0 !important; padding: 0 !important; }
+            .app-section { display: none !important; } /* Hide all sections */
+            #printable-report-content { display: block !important; } /* Show only print content */
+            .bg-white { box-shadow: none !important; border: 1px solid #ccc; }
+            .text-xs { font-size: 0.7rem !important; }
+            .text-sm { font-size: 0.8rem !important; }
+            .text-lg { font-size: 1rem !important; }
+            .text-xl { font-size: 1.1rem !important; }
+            .text-2xl { font-size: 1.2rem !important; }
+            .font-bold { font-weight: bold !important; }
+            .p-1 { padding: 0.25rem !important; }
+            .p-2 { padding: 0.5rem !important; }
+            .p-3 { padding: 0.75rem !important; }
+            .mb-1 { margin-bottom: 0.25rem !important; }
+            .mb-2 { margin-bottom: 0.5rem !important; }
+            .mb-4 { margin-bottom: 1rem !important; }
+            .mt-4 { margin-top: 1rem !important; }
+            .mt-6 { margin-top: 1.5rem !important; }
+            .gap-4 { gap: 1rem !important; }
+            .grid { display: grid !important; }
+            .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+            .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+            .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+            .text-center { text-align: center !important; }
+            .text-right { text-align: right !important; }
+            .border { border-width: 1px !important; }
+            .border-b { border-bottom-width: 1px !important; }
+            .border-b-2 { border-bottom-width: 2px !important; }
+            .border-black { border-color: black !important; }
+            .border-gray-300 { border-color: #d1d5db !important; }
+            .rounded-lg { border-radius: 0.5rem !important; }
+            .w-full { width: 100% !important; }
+            .mx-auto { margin-left: auto !important; margin-right: auto !important; }
+            table { border-collapse: collapse !important; width: 100% !important; margin-top: 15px !important; }
+            td, th { border: 1px solid #ddd !important; padding: 8px !important; text-align: center !important; }
+            th { background-color: #f2f2f2 !important; font-weight: bold !important;}
+            tr:nth-child(even){background-color: #f9f9f9 !important;}
+             /* Ensure colored backgrounds print */
+            .bg-blue-100 { background-color: #DBEAFE !important; }
+            .bg-green-100 { background-color: #DCFCE7 !important; }
+            .bg-red-100 { background-color: #FEE2E2 !important; }
+            .bg-gray-50 { background-color: #F9FAFB !important; }
+            .bg-gray-100 { background-color: #F3F4F6 !important; }
+
+            /* Specific report styles */
+            #printable-report-content .text-red-700 { color: #b91c1c !important; }
+            #printable-report-content .text-green-700 { color: #15803d !important; }
+            #printable-report-content .text-red-600 { color: #dc2626 !important; }
+            #printable-report-content .text-green-600 { color: #16a34a !important; }
+            #printable-report-content .text-blue-600 { color: #2563eb !important; }
+            #printable-report-content .font-semibold { font-weight: 600 !important; }
+        }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -462,6 +519,21 @@
                              <button id="clearHistoryBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">🗑️ مسح السجل</button>
                         </div>
                     </div>
+                    <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="historyClassFilter" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالفصل:</label>
+                                <select id="historyClassFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></select>
+                            </div>
+                            <div>
+                                <label for="historyExamFilter" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالاختبار:</label>
+                                <select id="historyExamFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></select>
+                            </div>
+                            <div class="self-end">
+                                <button id="filterHistoryBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">🔍 تطبيق الفلتر</button>
+                            </div>
+                        </div>
+                    </div>
                     <div id="historyList" class="space-y-3"></div>
                 </div>
 
@@ -506,7 +578,22 @@
             <!-- Section: Stats -->
             <section id="stats" class="app-section">
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                     <h2 class="text-2xl font-bold text-gray-800 mb-4">📈 الإحصائيات العامة</h2>
+                     <h2 class="text-2xl font-bold text-gray-800 mb-4">📈 الإحصائيات</h2>
+                      <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="statsClassFilter" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالفصل:</label>
+                                <select id="statsClassFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></select>
+                            </div>
+                            <div>
+                                <label for="statsExamFilter" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالاختبار:</label>
+                                <select id="statsExamFilter" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></select>
+                            </div>
+                            <div class="self-end">
+                                <button id="updateStatsBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">🔄 تحديث الإحصائيات</button>
+                            </div>
+                        </div>
+                    </div>
                      <div id="stats-container" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="bg-gray-50 p-4 rounded-lg">
                             <h3 class="font-semibold text-lg text-gray-800 mb-2">ملخص الأداء</h3>
@@ -565,6 +652,8 @@
                     </div>
                 </div>
             </section>
+             <!-- Div for printable report content -->
+            <div id="printable-report-content" class="hidden"></div>
 
         </main>
     </div>
@@ -651,8 +740,13 @@
                 // --- Section specific actions ---
                 if (sectionId === 'correction') populateCorrectionStudentSelect();
                 if (sectionId === 'reports') populateReportFilters();
-                if (sectionId === 'stats') updateGlobalStats();
+                if (sectionId === 'stats') {
+                    populateStatsFilters(); // Populate filters for stats
+                    updateGlobalStats(); // Update stats on showing section
+                }
                 if (sectionId === 'students') displayStudentsList(); // Ensure list shows when navigating
+                 if (sectionId === 'history') populateHistoryFilters(); // Populate filters for history
+
 
                 if (sectionId !== 'correction') document.getElementById('multipleCorrectionSection')?.classList.add('hidden');
                 
@@ -772,6 +866,9 @@
                 document.getElementById('filterClass')?.addEventListener('change', filterStudentsList);
                 document.getElementById('filterStatus')?.addEventListener('change', filterStudentsList);
                 document.getElementById('changeCorrectionStudentBtn')?.addEventListener('click', selectDifferentStudent);
+                document.getElementById('filterHistoryBtn')?.addEventListener('click', updateHistoryDisplay);
+                document.getElementById('updateStatsBtn')?.addEventListener('click', updateGlobalStats);
+
 
 
                  const examDateInput = document.getElementById('examDate');
@@ -1593,17 +1690,38 @@
         }
 
         // === History Management ===
+         function populateHistoryFilters() {
+            const classFilter = document.getElementById('historyClassFilter');
+            const examFilter = document.getElementById('historyExamFilter');
+             if(!classFilter || !examFilter) return;
+
+            const uniqueClasses = [...new Set(resultsHistory.map(r => r.studentClass))].sort();
+            const uniqueExams = [...new Set(resultsHistory.map(r => r.examName))].sort();
+
+            classFilter.innerHTML = '<option value="">جميع الفصول</option>' + uniqueClasses.map(c => `<option value="${c}">${c}</option>`).join('');
+            examFilter.innerHTML = '<option value="">جميع الاختبارات</option>' + uniqueExams.map(e => `<option value="${e}">${e}</option>`).join('');
+        }
+
         function updateHistoryDisplay() {
             const historyList = document.getElementById('historyList');
             const historySection = document.getElementById('historySection');
-            if(!historyList || !historySection) return;
+             const classFilter = document.getElementById('historyClassFilter')?.value;
+             const examFilter = document.getElementById('historyExamFilter')?.value;
 
-            historySection.classList.toggle('hidden', resultsHistory.length === 0);
-            if (resultsHistory.length === 0) {
-                historyList.innerHTML = '';
+            if(!historyList || !historySection) return;
+            
+            const filteredHistory = resultsHistory.filter(r => 
+                (!classFilter || r.studentClass === classFilter) &&
+                (!examFilter || r.examName === examFilter)
+            );
+
+
+            historySection.classList.toggle('hidden', filteredHistory.length === 0);
+            if (filteredHistory.length === 0) {
+                historyList.innerHTML = '<p class="text-center text-gray-500 py-4">لا توجد نتائج تطابق الفلتر المحدد.</p>';
                 return;
             }
-            historyList.innerHTML = resultsHistory.map(r => `
+            historyList.innerHTML = filteredHistory.map(r => `
                 <div class="bg-gray-50 rounded-lg p-3 border-r-4 border-blue-500">
                     <div class="flex justify-between items-center">
                         <div>
@@ -1852,6 +1970,7 @@
             if (firstLog) {
                 const modelName = Object.keys(answerKeyModels).find(key => {
                     const model = answerKeyModels[key];
+                    // Match by examName AND number of answers
                     return model && (model.examName === firstLog.examName) && (model.answers && model.answers.length === (firstLog.answers?.length || 0));
                 });
                 reportCorrectAnswers = modelName ? (answerKeyModels[modelName].answers || []) : [];
@@ -1859,12 +1978,14 @@
                 if (reportCorrectAnswers.length > 0) {
                      const questionErrors = {};
                      for (let i = 0; i < reportCorrectAnswers.length; i++) {
+                         // Initialize with errors, choices map, and correct answer
                          questionErrors[i + 1] = { errors: 0, choices: {}, correct: reportCorrectAnswers[i] };
                      }
                      filteredLogs.forEach(log => {
                          (log.answers || []).forEach((studentAnswer, i) => {
                              if (i < reportCorrectAnswers.length && studentAnswer !== reportCorrectAnswers[i]) {
                                  questionErrors[i + 1].errors++;
+                                 // Track incorrect choices (excluding blank)
                                  if(studentAnswer && studentAnswer !== 'فراغ'){ 
                                      questionErrors[i + 1].choices[studentAnswer] = (questionErrors[i + 1].choices[studentAnswer] || 0) + 1;
                                  }
@@ -1872,31 +1993,37 @@
                          });
                      });
                      
+                     // Sort questions by error count (descending)
                      const sortedErrors = Object.entries(questionErrors).sort(([,a],[,b]) => b.errors - a.errors);
                      
                      hardestQuestionNum = sortedErrors.length > 0 ? sortedErrors[0][0] : '-';
                      easiestQuestionNum = sortedErrors.length > 0 ? sortedErrors[sortedErrors.length - 1][0] : '-';
 
+                     // Build the analysis table HTML
                      questionAnalysisHTML = `
                         <table class="w-full text-sm mt-4 border-collapse border border-gray-300">
                             <thead>
                                 <tr class="bg-gray-100 border-b border-gray-300">
-                                    <th class="p-2 border-l border-gray-300">رقم السؤال</th>
-                                    <th class="p-2 border-l border-gray-300">عدد الأخطاء</th>
-                                    <th class="p-2">الإجابة الصحيحة</th>
+                                    <th class="p-1 border-l border-gray-300">رقم السؤال</th>
+                                    <th class="p-1 border-l border-gray-300">عدد الأخطاء</th>
+                                    <th class="p-1">الإجابة الصحيحة</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${sortedErrors.map(([qNum, data]) => {
+                                    // Determine row color based on error rate
                                     let errorClass = 'q-errors-none';
-                                    if (data.errors > filteredLogs.length * 0.5) errorClass = 'q-errors-high';
-                                    else if (data.errors > filteredLogs.length * 0.25) errorClass = 'q-errors-medium';
-                                    else if (data.errors > 0) errorClass = 'q-errors-low';
+                                    if(filteredLogs.length > 0) { // Avoid division by zero
+                                        const errorRate = data.errors / filteredLogs.length;
+                                        if (errorRate > 0.5) errorClass = 'q-errors-high';
+                                        else if (errorRate > 0.25) errorClass = 'q-errors-medium';
+                                        else if (errorRate > 0) errorClass = 'q-errors-low';
+                                    }
                                     return `
                                     <tr class="border-b border-gray-200 ${errorClass}">
-                                        <td class="p-2 text-center font-bold border-l border-gray-300">${qNum}</td>
-                                        <td class="p-2 text-center font-bold border-l border-gray-300">${data.errors}</td>
-                                        <td class="p-2 text-center">${data.correct || '-'}</td>
+                                        <td class="p-1 text-center font-bold border-l border-gray-300">${qNum}</td>
+                                        <td class="p-1 text-center font-bold border-l border-gray-300">${data.errors}</td>
+                                        <td class="p-1 text-center">${data.correct || '-'}</td>
                                     </tr>`
                                 }).join('')}
                             </tbody>
@@ -1956,10 +2083,16 @@
             const classFilter = document.getElementById('reportClassFilter')?.value;
             const examFilter = document.getElementById('reportExamFilter')?.value;
              if(classFilter === undefined || examFilter === undefined) return;
-            const title = `تقرير أداء ${examFilter || 'الاختبار'}`;
+             const modelNameFromExam = Object.keys(answerKeyModels).find(key => answerKeyModels[key].examName === examFilter);
+             const subjectName = modelNameFromExam ? answerKeyModels[modelNameFromExam].subject : (examFilter || 'الاختبار');
+             const date = new Date().toLocaleDateString('ar-SA');
+             const title = `تقرير أداء ${subjectName} ${examFilter ? '- ' + examFilter : ''}`;
+            const fileName = `تقرير-${subjectName.replace(/[^a-zA-Z0-9]/g, '_')}-${date}`; // Sanitize file name
+
             
             // Get the generated content *excluding* the print button itself for printing
-            const reportContainerClone = document.getElementById('report-container').cloneNode(true);
+            const reportContainerClone = document.getElementById('report-container')?.cloneNode(true);
+             if(!reportContainerClone) return;
             const printButtonInClone = reportContainerClone.querySelector('#printReportBtn');
             if(printButtonInClone) printButtonInClone.remove();
             let reportContent = reportContainerClone.innerHTML; // Contains summary + analysis table
@@ -1970,6 +2103,8 @@
                 (!examFilter || log.examName === examFilter)
             );
             const allStudentsInFilter = studentsList.filter(s => !classFilter || s.class === classFilter);
+            const absentStudents = allStudentsInFilter.filter(s => s.status === 'absent');
+
 
             // Sort students alphabetically for the table
             allStudentsInFilter.sort((a,b) => a.name.localeCompare(b.name, 'ar'));
@@ -1978,36 +2113,55 @@
                 const log = studentLogs.find(l => l.studentName === student.name && l.studentClass === student.class);
                 return `
                 <tr class="border-b">
-                    <td class="p-2 text-center">${index + 1}</td>
-                    <td class="p-2 text-right">${student.name}</td>
-                     <td class="p-2 text-center">${student.class}</td>
-                    <td class="p-2 text-center">${log ? log.score : (student.status === 'absent' ? 'غائب' : '-')}</td>
-                    <td class="p-2 text-center">${log ? log.percentage : '-'}</td>
-                    <td class="p-2 text-center">${log ? log.grade : '-'}</td>
+                    <td class="p-1 text-center">${index + 1}</td>
+                    <td class="p-1 text-right">${student.name}</td>
+                     <td class="p-1 text-center">${student.class}</td>
+                    <td class="p-1 text-center">${log ? log.score : (student.status === 'absent' ? 'غائب' : '-')}</td>
+                    <td class="p-1 text-center">${log ? log.percentage : '-'}</td>
+                    <td class="p-1 text-center">${log ? log.grade : '-'}</td>
                 </tr>
             `}).join('');
+            
+             const absentListHTML = absentStudents.map((student, index) => `
+                 <li class="text-sm">${index + 1}. ${student.name} (${student.class})</li>
+             `).join('');
 
-            const chartImage = await getReportChartsAsImages(studentLogs);
+
+            // Generate chart images for printing
+             const gradeChartImage = await getReportChartsAsImages(studentLogs, 'pie');
+             const classChartImage = await getReportChartsAsImages(studentLogs, 'bar', classFilter); // Pass classFilter for bar chart context
+
 
             const studentTable = `
                 <h4 class="text-lg font-bold mt-6 mb-2">درجات الطلاب</h4>
                 <table class="w-full text-sm mt-4">
-                    <thead><tr class="border-b-2 border-black"><th class="p-2">#</th><th class="p-2 text-right">اسم الطالب</th><th class="p-2">الفصل</th><th class="p-2">الدرجة</th><th class="p-2">النسبة</th><th class="p-2">التقدير</th></tr></thead>
+                    <thead><tr class="border-b-2 border-black"><th class="p-1">#</th><th class="p-1 text-right">اسم الطالب</th><th class="p-1">الفصل</th><th class="p-1">الدرجة</th><th class="p-1">النسبة</th><th class="p-1">التقدير</th></tr></thead>
                     <tbody>${studentListHTML}</tbody>
                 </table>
+                 <div style="page-break-before: always;"></div> <!-- Page break before charts -->
                  <h4 class="text-lg font-bold mt-6 mb-2">توزيع التقديرات</h4>
-                ${chartImage ? `<img src="${chartImage}" class="mx-auto" style="max-width: 300px;"/>` : '<p class="text-center text-gray-500">لا يمكن عرض الرسم البياني للتقديرات.</p>'}
+                ${gradeChartImage ? `<img src="${gradeChartImage}" class="mx-auto block" style="max-width: 350px; margin-top: 10px;"/>` : '<p class="text-center text-gray-500">لا يمكن عرض رسم التقديرات.</p>'}
+                
+                ${classChartImage ? `
+                     <h4 class="text-lg font-bold mt-6 mb-2">متوسط الأداء حسب الفصل</h4>
+                     <img src="${classChartImage}" class="mx-auto block" style="max-width: 500px; margin-top: 10px;"/>
+                 ` : ''}
+
+                 ${absentCount > 0 ? `
+                     <h4 class="text-lg font-bold mt-6 mb-2">الطلاب الغائبون (${absentCount})</h4>
+                     <ul class="list-decimal list-inside pr-4">${absentListHTML}</ul>
+                 ` : ''}
             `;
             
-            printContent(reportContent + studentTable, title); // Combine analysis table and student table
+            printContent(reportContent + studentTable, title, fileName); // Combine analysis table and student table
         }
 
-        function printContent(content, title) {
+        function printContent(content, title, fileName) {
             const settings = getFromStorage('appSettings', {});
             const classFilter = document.getElementById('reportClassFilter')?.value || '';
             const examFilter = document.getElementById('reportExamFilter')?.value || '';
             const date = new Date().toLocaleDateString('ar-SA');
-            const fileName = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${examFilter.replace(/[^a-zA-Z0-9]/g, '_')}_${date}`; // Sanitize file name
+            const safeFileName = fileName || `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${date}`; // Use provided or generate
 
             const headerInfo = `
                 <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
@@ -2030,7 +2184,47 @@
             const win = window.open('', '_blank');
              if(win){
                  // Added style block specifically for printing tables correctly
-                win.document.write(`<html><head><title>${fileName}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo', sans-serif; direction: rtl; margin: 20px;} table { border-collapse: collapse; width: 100%; margin-top: 15px; } td, th { border: 1px solid #ddd; padding: 8px; text-align: center; } th { background-color: #f2f2f2; font-weight: bold;} tr:nth-child(even){background-color: #f9f9f9;} @media print { body { -webkit-print-color-adjust: exact; color-adjust: exact; } button { display: none; } }</style></head><body class="p-4">${fullContent}</body></html>`);
+                 // Included CSS for colors from the main style block
+                 win.document.write(`
+                    <html>
+                        <head>
+                            <title>${safeFileName}</title>
+                            <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+                            <style>
+                                body { font-family:'Cairo', sans-serif; direction: rtl; margin: 20px; } 
+                                table { border-collapse: collapse !important; width: 100% !important; margin-top: 15px !important; page-break-inside: auto; } 
+                                tr { page-break-inside: avoid; page-break-after: auto; }
+                                thead { display: table-header-group; } /* Repeat header on each page */
+                                td, th { border: 1px solid #ddd !important; padding: 6px !important; text-align: center !important; font-size: 0.8rem; } 
+                                th { background-color: #f2f2f2 !important; font-weight: bold !important;} 
+                                tr:nth-child(even){background-color: #f9f9f9 !important;} 
+                                img { max-width: 100%; height: auto; }
+                                .page-break { page-break-before: always; }
+                                /* Bring color styles directly here for printing */
+                                .q-errors-high { background-color: #fee2e2 !important; color: #b91c1c !important; } 
+                                .q-errors-medium { background-color: #ffedd5 !important; color: #c2410c !important; } 
+                                .q-errors-low { background-color: #dcfce7 !important; color: #166534 !important; } 
+                                .q-errors-none { background-color: #f0fdf4 !important; color: #16a34a !important; } 
+                                .bg-blue-100 { background-color: #DBEAFE !important; }
+                                .bg-green-100 { background-color: #DCFCE7 !important; }
+                                .bg-red-100 { background-color: #FEE2E2 !important; }
+                                .bg-gray-100 { background-color: #F3F4F6 !important; }
+                                .bg-yellow-100 { background-color: #FEF3C7 !important; }
+                                .text-red-700 { color: #b91c1c !important; }
+                                .text-green-700 { color: #15803d !important; }
+                                .text-red-600 { color: #dc2626 !important; }
+                                .text-green-600 { color: #16a34a !important; }
+                                .text-blue-600 { color: #2563eb !important; }
+                                .font-semibold { font-weight: 600 !important; }
+                                .font-bold { font-weight: 700 !important; }
+                                @media print { 
+                                    body { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; } 
+                                    button { display: none !important; } 
+                                }
+                            </style>
+                        </head>
+                        <body class="p-4">${fullContent}</body>
+                    </html>`);
                 win.document.close();
                 setTimeout(() => { 
                     try { win.print(); } catch(e){ console.error("Print error:", e); }
@@ -2040,6 +2234,7 @@
                  showNotification("فشل فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.", "error");
              }
         }
+
 
 
         function printBlankSheet() {
@@ -2138,36 +2333,7 @@
                 </div>
             `;
             
-            const win = window.open('', '_blank');
-              if(win){
-                 // Added qrcode.min.js script tag correctly
-                win.document.write(`<html><head><title>${fileName}</title><script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head><body>${content}</body></html>`);
-                win.document.close();
-
-                 setTimeout(() => { 
-                    try {
-                        const qrContainer = win.document.getElementById("qrcode-container");
-                        // Check if QRCode library is loaded AND container exists
-                        if (win.QRCode && qrContainer) { 
-                            const qrData = JSON.stringify({ subject: subjectName, model: modelName, questions: qCount, examName: examName, examDate: examDate });
-                            new win.QRCode(qrContainer, { text: qrData, width: 80, height: 80, correctLevel : win.QRCode.CorrectLevel.H });
-                        } else if (!qrContainer) {
-                             console.error("QR Code container not found in print window.");
-                        } else {
-                             console.error("QRCode library failed to load in the print window.");
-                             if(qrContainer) qrContainer.innerText = "QR Error";
-                        }
-                        win.focus();
-                        win.print(); 
-                        // win.close(); // Keep open for save as PDF option
-                    } catch(e) {
-                         console.error("Error generating QR code or printing:", e); // Log the actual error
-                         showNotification("حدث خطأ أثناء محاولة الطباعة.", "error");
-                    }
-                 }, 500); // Increased timeout slightly
-             } else {
-                 showNotification("فشل فتح نافذة الطباعة. يرجى السماح بالنوافذ المنبثقة.", "error");
-             }
+            printContent(content, `نموذج إجابة ${subjectName}`, fileName); 
         }
         
         // === Settings Section ===
@@ -2288,20 +2454,40 @@
         }
         
         // === Stats Section ===
+         function populateStatsFilters() {
+            const classFilter = document.getElementById('statsClassFilter');
+            const examFilter = document.getElementById('statsExamFilter');
+             if(!classFilter || !examFilter) return;
+
+            const uniqueClasses = [...new Set(resultsHistory.map(r => r.studentClass))].sort();
+            const uniqueExams = [...new Set(resultsHistory.map(r => r.examName))].sort();
+
+            classFilter.innerHTML = '<option value="">جميع الفصول</option>' + uniqueClasses.map(c => `<option value="${c}">${c}</option>`).join('');
+            examFilter.innerHTML = '<option value="">جميع الاختبارات</option>' + uniqueExams.map(e => `<option value="${e}">${e}</option>`).join('');
+        }
+
         function updateGlobalStats() {
             const container = document.getElementById('summary-stats');
             const gradeCtx = document.getElementById('grade-distribution-chart');
             const classCtx = document.getElementById('class-performance-chart');
+            const classFilter = document.getElementById('statsClassFilter')?.value;
+            const examFilter = document.getElementById('statsExamFilter')?.value;
             
              if(!container || !gradeCtx || !classCtx) {
                  console.warn("Stats elements not found, skipping update.");
                  return; 
              }
+             
+             const filteredResults = resultsHistory.filter(r => 
+                 (!classFilter || r.studentClass === classFilter) &&
+                 (!examFilter || r.examName === examFilter)
+             );
 
-            const totalCorrected = resultsHistory.length;
-            const overallAverage = totalCorrected > 0 ? Math.round(resultsHistory.reduce((sum, r) => sum + (parseInt(r.percentage) || 0), 0) / totalCorrected) : 0;
-            const uniqueStudents = new Set(resultsHistory.map(r => r.studentName)).size;
-            const uniqueExams = new Set(resultsHistory.map(r => r.examName)).size;
+
+            const totalCorrected = filteredResults.length;
+            const overallAverage = totalCorrected > 0 ? Math.round(filteredResults.reduce((sum, r) => sum + (parseInt(r.percentage) || 0), 0) / totalCorrected) : 0;
+            const uniqueStudents = new Set(filteredResults.map(r => r.studentName)).size;
+            const uniqueExams = new Set(filteredResults.map(r => r.examName)).size;
 
             container.innerHTML = `
                 <div class="bg-blue-100 p-3 rounded-lg text-center"><div class="text-2xl font-bold text-blue-600">${totalCorrected}</div><div class="text-xs">ورقة مصححة</div></div>
@@ -2314,7 +2500,7 @@
              try {
                 if(gradeChart) gradeChart.destroy();
                 const gradeCounts = { 'ممتاز': 0, 'جيد جداً': 0, 'جيد': 0, 'مقبول': 0, 'ضعيف': 0 };
-                 resultsHistory.forEach(r => { 
+                 filteredResults.forEach(r => { 
                      const grade = r.grade || 'ضعيف'; // Default to 'ضعيف' if grade is missing
                      if(gradeCounts[grade] !== undefined) gradeCounts[grade]++; 
                  });
@@ -2335,7 +2521,7 @@
              try {
                 if(classChart) classChart.destroy();
                 const classPerformances = {};
-                resultsHistory.forEach(r => {
+                filteredResults.forEach(r => {
                      const className = r.studentClass || 'غير محدد';
                     if(!classPerformances[className]) classPerformances[className] = { total: 0, count: 0 };
                     classPerformances[className].total += (parseInt(r.percentage) || 0); // Default to 0 if percentage is invalid
@@ -2358,58 +2544,72 @@
             } catch (e) { console.error("Error creating class chart:", e); }
         }
         
-        async function getReportChartsAsImages(logs) {
+        async function getReportChartsAsImages(logs, chartType, classFilterValue) {
             if (typeof Chart === 'undefined') {
                 console.error("Chart.js library is not loaded.");
                 return null;
             }
             const offscreenCanvas = document.createElement('canvas');
-            offscreenCanvas.width = 400;
-            offscreenCanvas.height = 200;
             const ctx = offscreenCanvas.getContext('2d');
             if(!ctx){
                  console.error("Could not get 2D context for offscreen canvas.");
                  return null;
             }
-            const gradeCounts = { 'ممتاز': 0, 'جيد جداً': 0, 'جيد': 0, 'مقبول': 0, 'ضعيف': 0 };
-            logs.forEach(r => { 
-                const grade = r.grade || 'ضعيف';
-                if(gradeCounts[grade] !== undefined) gradeCounts[grade]++; 
-            });
+            
+            let chartConfig;
+            
+            if(chartType === 'pie'){
+                 offscreenCanvas.width = 400; offscreenCanvas.height = 250; 
+                 const gradeCounts = { 'ممتاز': 0, 'جيد جداً': 0, 'جيد': 0, 'مقبول': 0, 'ضعيف': 0 };
+                 logs.forEach(r => { 
+                    const grade = r.grade || 'ضعيف';
+                    if(gradeCounts[grade] !== undefined) gradeCounts[grade]++; 
+                 });
+                 chartConfig = {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(gradeCounts),
+                        datasets: [{ data: Object.values(gradeCounts), backgroundColor: ['#22c55e', '#84cc16', '#facc15', '#fb923c', '#ef4444'], }]
+                    },
+                    options: { responsive: false, animation: false, plugins: { legend: { display: true, position: 'bottom' } } }
+                 };
+            } else if (chartType === 'bar'){
+                 offscreenCanvas.width = 600; offscreenCanvas.height = 300; 
+                 const classPerformances = {};
+                 const relevantHistory = classFilterValue ? resultsHistory.filter(r => r.studentClass === classFilterValue) : resultsHistory; // Filter history for bar chart
+
+                 relevantHistory.forEach(r => {
+                     const className = r.studentClass || 'غير محدد';
+                    if(!classPerformances[className]) classPerformances[className] = { total: 0, count: 0 };
+                    classPerformances[className].total += (parseInt(r.percentage) || 0); 
+                    classPerformances[className].count++;
+                 });
+                 const classLabels = Object.keys(classPerformances).sort();
+                 const classAverages = classLabels.map(c => classPerformances[c].count > 0 ? Math.round(classPerformances[c].total / classPerformances[c].count) : 0);
+                 
+                 chartConfig = {
+                     type: 'bar',
+                     data: {
+                        labels: classLabels,
+                        datasets: [{ label: 'متوسط الدرجات', data: classAverages, backgroundColor: '#4f46e5', }]
+                     },
+                     options: { responsive: false, animation: false, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+                 };
+            } else {
+                 return null; // Invalid chart type
+            }
 
             return new Promise((resolve) => {
                 let chartInstance = null;
                 try {
-                     chartInstance = new Chart(ctx, {
-                        type: 'pie',
-                        data: {
-                            labels: Object.keys(gradeCounts),
-                            datasets: [{ data: Object.values(gradeCounts), backgroundColor: ['#22c55e', '#84cc16', '#facc15', '#fb923c', '#ef4444'], }]
-                        },
-                        options: {
-                            responsive: false,
-                            animation: false, 
-                            plugins: {
-                                legend: { display: true, position: 'bottom' } 
-                            }
-                        }
-                    });
-                     
-                     // Use requestAnimationFrame to wait for chart rendering before converting
+                     chartInstance = new Chart(ctx, chartConfig);
                      requestAnimationFrame(() => {
-                         requestAnimationFrame(() => { // Double RAF for safety
-                             try {
-                                 const imageUrl = chartInstance.toBase64Image();
-                                 resolve(imageUrl);
-                             } catch (imgError) {
-                                 console.error("Error converting chart to image:", imgError);
-                                 resolve(null);
-                             } finally {
-                                 if (chartInstance) chartInstance.destroy(); 
-                             }
+                         requestAnimationFrame(() => { 
+                             try { resolve(chartInstance.toBase64Image()); } 
+                             catch (imgError) { console.error("Error converting chart to image:", imgError); resolve(null); } 
+                             finally { if (chartInstance) chartInstance.destroy(); }
                          });
                      });
-
                 } catch (chartError) {
                      console.error("Error creating chart instance:", chartError);
                      resolve(null); 
