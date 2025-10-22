@@ -99,6 +99,7 @@
             .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
             .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
             .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+            .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
             .text-center { text-align: center !important; }
             .text-right { text-align: right !important; }
             .border { border-width: 1px !important; }
@@ -112,7 +113,7 @@
             table { border-collapse: collapse !important; width: 100% !important; margin-top: 15px !important; page-break-inside: auto !important;}
             tr { page-break-inside: avoid !important; page-break-after: auto !important; }
             thead { display: table-header-group !important; } /* Repeat header on each page */
-            td, th { border: 1px solid #ddd !important; padding: 6px !important; text-align: center !important; font-size: 0.8rem !important; }
+            td, th { border: 1px solid #ddd !important; padding: 4px !important; text-align: center !important; font-size: 0.75rem !important; } /* Reduced padding/font */
             th { background-color: #f2f2f2 !important; font-weight: bold !important;}
             tr:nth-child(even){background-color: #f9f9f9 !important;}
             img { max-width: 100% !important; height: auto !important; page-break-inside: avoid !important;}
@@ -124,6 +125,7 @@
             .bg-gray-50 { background-color: #F9FAFB !important; }
             .bg-gray-100 { background-color: #F3F4F6 !important; }
             .bg-yellow-100 { background-color: #FEF3C7 !important; }
+            .bg-orange-100 { background-color: #FFEDD5 !important; }
 
             /* Specific report styles */
             #printable-report-content .text-red-700 { color: #b91c1c !important; }
@@ -136,6 +138,8 @@
             #printable-report-content .max-h-60 { max-height: none !important; } /* Allow table to expand */
             #printable-report-content .overflow-y-auto { overflow-y: visible !important; }
             #printable-report-content .pr-2 { padding-right: 0 !important; }
+            #printable-report-content .question-analysis-table td,
+            #printable-report-content .question-analysis-table th { font-size: 0.7rem !important; padding: 3px !important; } /* Smaller font for analysis table */
         }
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -528,7 +532,7 @@
                              <button id="clearHistoryBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium text-sm">🗑️ مسح السجل</button>
                         </div>
                     </div>
-                    <div id="historyFilters" class="bg-gray-50 rounded-lg p-4 mb-4">
+                    <div id="historyFilters" class="bg-gray-50 rounded-lg p-4 mb-4 hidden">
                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <label for="historyClassFilter" class="block text-sm font-medium text-gray-700 mb-1">فلترة بالفصل:</label>
@@ -547,7 +551,7 @@
                 </div>
 
                 <!-- سجل إجابات الطلاب المفصل -->
-                <div id="detailedHistorySection" class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div id="detailedHistorySection" class="bg-white rounded-xl shadow-lg p-6 mb-8 hidden">
                      <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-bold text-gray-800">📋 سجل إجابات الطلاب (مفصل)</h3>
                         <div class="flex gap-2">
@@ -662,7 +666,7 @@
                 </div>
             </section>
              <!-- Div for printable report content - kept outside sections for simplicity in print function -->
-            <div id="printable-report-content" class="hidden"></div>
+            <div id="printable-report-content" class="hidden print:block"></div>
 
         </main>
     </div>
@@ -697,14 +701,15 @@
         function getFromStorage(key, defaultValue) {
             try {
                 const storedValue = localStorage.getItem(key);
-                if (storedValue && (storedValue.startsWith('{') || storedValue.startsWith('['))) {
-                    return JSON.parse(storedValue);
+                if (storedValue === null || storedValue === undefined) return defaultValue;
+                // Attempt to parse only if it looks like JSON
+                if (storedValue.startsWith('{') || storedValue.startsWith('[')) {
+                     try { return JSON.parse(storedValue); } catch { return defaultValue; }
                 }
-                 if (storedValue === null || storedValue === undefined || storedValue === "") {
-                     return defaultValue;
-                 }
-                 try { return JSON.parse(storedValue); } catch { return defaultValue; }
-
+                // Handle cases where non-JSON might be stored accidentally (shouldn't happen with current code)
+                console.warn(`Value for ${key} in localStorage is not valid JSON.`);
+                localStorage.removeItem(key); // Remove invalid data
+                return defaultValue;
             } catch (e) {
                 console.error(`Error parsing ${key} from localStorage:`, e);
                 localStorage.removeItem(key); 
@@ -900,6 +905,7 @@
              console.log("Loading initial UI...");
             settings = getFromStorage('appSettings', {});
             studentsList = getFromStorage('studentsList', []);
+            // Ensure status property exists, default to 'pending' if missing
             studentsList = studentsList.map(s => ({ ...s, status: s.status || 'pending' })); 
             resultsHistory = getFromStorage('examResults', []);
             detailedAnswersLog = getFromStorage('detailedAnswersLog', []);
@@ -919,16 +925,20 @@
                  document.getElementById('studentsListSection')?.classList.add('hidden');
              }
             
-            if (resultsHistory.length > 0) updateHistoryDisplay();
-             else {
+            if (resultsHistory.length > 0) {
+                updateHistoryDisplay();
+            } else {
                  document.getElementById('historySection')?.classList.add('hidden');
+                 document.getElementById('historyFilters')?.classList.add('hidden');
             }
             if (detailedAnswersLog.length > 0) document.getElementById('detailedHistorySection')?.classList.remove('hidden');
              else {
                  document.getElementById('detailedHistorySection')?.classList.add('hidden');
              }
              const initialSection = window.location.hash ? window.location.hash.substring(1) : 'dashboard';
-             showSection(initialSection);
+             // Validate initialSection before showing
+             const validSections = ['dashboard', 'students', 'answer-key', 'correction', 'history', 'reports', 'stats', 'settings'];
+             showSection(validSections.includes(initialSection) ? initialSection : 'dashboard');
              console.log("Initial UI Load Complete.");
         }
         
@@ -1163,21 +1173,21 @@
         
         function selectStudent(studentId) {
             currentStudent = studentsList.find(s => s.id === parseInt(studentId));
-            const selectElement = document.getElementById('correctionStudentSelect');
-            const displayContainer = document.getElementById('correctionSelectedStudentDisplay');
-            const nameDisplay = document.getElementById('correctionStudentNameDisplay');
-            const classDisplay = document.getElementById('correctionStudentClassDisplay');
+             const selectElement = document.getElementById('correctionStudentSelect');
+             const displayContainer = document.getElementById('correctionSelectedStudentDisplay');
+             const nameDisplay = document.getElementById('correctionStudentNameDisplay');
+             const classDisplay = document.getElementById('correctionStudentClassDisplay');
 
             if (currentStudent && selectElement && displayContainer && nameDisplay && classDisplay) {
-                selectElement.value = currentStudent.id;
-                nameDisplay.textContent = currentStudent.name;
-                classDisplay.textContent = currentStudent.class;
-                displayContainer.classList.remove('hidden'); 
+                 selectElement.value = currentStudent.id;
+                 nameDisplay.textContent = currentStudent.name;
+                 classDisplay.textContent = currentStudent.class;
+                 displayContainer.classList.remove('hidden'); 
                 showNotification(`تم اختيار الطالب: ${currentStudent.name}. يمكنك الآن بدء التصحيح.`, 'success');
-            } else if (!currentStudent) {
+             } else if (!currentStudent) {
                  console.error("Student not found with ID:", studentId);
-                 selectDifferentStudent(); // Clear selection if student not found
-            }
+                 selectDifferentStudent(); 
+             }
         }
         
         function markAsAbsent(studentId) {
@@ -1338,7 +1348,10 @@
             const currentAnswers = modelData?.answers || [];
 
             if (isNaN(questionCount) || questionCount < 1) {
-                 showNotification("عدد الأسئلة غير صالح.", "error");
+                 // Don't show error, just prevent generation if count is bad
+                 console.warn("Invalid question count:", questionCountInput.value);
+                 answersGrid.innerHTML = '<p class="text-red-500">الرجاء إدخال عدد أسئلة صحيح.</p>';
+                 answerSheetDiv.classList.remove('hidden');
                  return;
              }
 
@@ -1355,6 +1368,7 @@
              answerSheetDiv.classList.remove('hidden');
         }
 
+
         function saveCorrectAnswers() {
             const modelName = document.getElementById('answerKeyModel')?.value;
             if (!modelName) return;
@@ -1368,6 +1382,10 @@
 
 
             const questionCount = parseInt(questionCountInput.value);
+             if (isNaN(questionCount) || questionCount < 1) {
+                 showNotification("عدد الأسئلة غير صالح.", "error");
+                 return;
+             }
             correctAnswers = [];
              let allAnswered = true;
             for(let i=1; i<=questionCount; i++){
@@ -1375,14 +1393,10 @@
                 if(select && select.value){
                     correctAnswers.push(select.value);
                 } else {
-                    allAnswered = false;
-                     break; 
+                    // This case shouldn't happen with default 'A', but good for robustness
+                    console.warn(`Answer for question ${i} not found or empty.`);
+                    correctAnswers.push('A'); // Default to A if somehow empty
                 }
-            }
-
-            if(!allAnswered){
-                showNotification("يرجى إدخال جميع الإجابات قبل الحفظ.", "error");
-                return;
             }
 
             answerKeyModels[modelName] = {
@@ -2006,6 +2020,7 @@
             let questionAnalysisHTML = '<p class="text-sm text-gray-500">لا يمكن تحليل الأسئلة بدون نموذج إجابة مطابق لهذا الاختبار.</p>';
             let hardestQuestionNum = '-';
             let easiestQuestionNum = '-';
+            let totalQuestions = 0;
             
             if (firstLog) {
                 const modelName = Object.keys(answerKeyModels).find(key => {
@@ -2014,6 +2029,7 @@
                     return model && (model.examName === firstLog.examName) && (model.answers && model.answers.length === (firstLog.answers?.length || 0));
                 });
                 reportCorrectAnswers = modelName ? (answerKeyModels[modelName].answers || []) : [];
+                 totalQuestions = reportCorrectAnswers.length; // Get total questions count
 
                 if (reportCorrectAnswers.length > 0) {
                      const questionErrors = {};
@@ -2041,7 +2057,7 @@
 
                      // Build the analysis table HTML
                      questionAnalysisHTML = `
-                        <table class="w-full text-sm mt-4 border-collapse border border-gray-300">
+                        <table class="w-full text-sm mt-4 border-collapse border border-gray-300 question-analysis-table">
                             <thead>
                                 <tr class="bg-gray-100 border-b border-gray-300">
                                     <th class="p-1 border-l border-gray-300">رقم السؤال</th>
@@ -2084,9 +2100,10 @@
                 <div id="printable-report" class="bg-white p-6 rounded-lg shadow-md">
                     
                     <h4 class="text-lg font-bold mb-2">ملخص الأداء</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-center">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 text-center">
                          <div class="bg-blue-100 p-3 rounded-lg"><div class="font-bold text-xl">${presentCount}</div><div class="text-xs">عدد الحضور</div></div>
                         <div class="bg-gray-100 p-3 rounded-lg"><div class="font-bold text-xl">${absentCount}</div><div class="text-xs">عدد الغياب</div></div>
+                         <div class="bg-orange-100 p-3 rounded-lg"><div class="font-bold text-xl">${totalQuestions}</div><div class="text-xs">عدد الأسئلة</div></div>
                         <div class="bg-green-100 p-3 rounded-lg"><div class="font-bold text-xl">${avgScore}%</div><div class="text-xs">متوسط الحضور</div></div>
                         <div class="bg-yellow-100 p-3 rounded-lg"><div class="font-bold text-xl">${maxScore}%</div><div class="text-xs">أعلى درجة</div></div>
                        
@@ -2127,7 +2144,7 @@
              const subjectName = modelNameFromExam ? answerKeyModels[modelNameFromExam].subject : (examFilter || 'الاختبار');
              const date = new Date().toLocaleDateString('ar-SA');
              const title = `تقرير أداء ${subjectName} ${examFilter ? '- ' + examFilter : ''}`;
-            const fileName = `تقرير-${subjectName.replace(/[^a-zA-Z0-9]/g, '_')}-${date}`; // Sanitize file name
+            const fileName = `تقرير-${subjectName.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_')}-${date}`; // Sanitize file name better
 
             
             // Get the generated content *excluding* the print button itself for printing
@@ -2170,7 +2187,7 @@
             // Generate chart images for printing
              const gradeChartImage = await getReportChartsAsImages(studentLogs, 'pie');
              // For class chart in report, only show if no specific class is selected
-             const classChartImage = (!classFilter) ? await getReportChartsAsImages(studentLogs, 'bar') : null; 
+             const classChartImage = (!classFilter) ? await getReportChartsAsImages(studentLogs, 'bar', classFilter) : null;
 
 
             const studentTable = `
@@ -2209,7 +2226,7 @@
             const classFilter = document.getElementById('reportClassFilter')?.value || '';
             const examFilter = document.getElementById('reportExamFilter')?.value || '';
             const date = new Date().toLocaleDateString('ar-SA');
-            const safeFileName = fileName || `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${date}`; // Use provided or generate
+            const safeFileName = fileName || `${title.replace(/[^a-zA-Z0-9\u0600-\u06FF]/g, '_')}_${date}`; // Use provided or generate
 
             const headerInfo = `
                 <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
@@ -2242,7 +2259,7 @@
                                 table { border-collapse: collapse !important; width: 100% !important; margin-top: 15px !important; page-break-inside: auto !important; } 
                                 tr { page-break-inside: avoid !important; page-break-after: auto !important; }
                                 thead { display: table-header-group !important; } 
-                                td, th { border: 1px solid #ddd !important; padding: 6px !important; text-align: center !important; font-size: 0.8rem !important; } 
+                                td, th { border: 1px solid #ddd !important; padding: 4px !important; text-align: center !important; font-size: 0.75rem !important; } 
                                 th { background-color: #f2f2f2 !important; font-weight: bold !important;} 
                                 tr:nth-child(even){background-color: #f9f9f9 !important;} 
                                 img { max-width: 100% !important; height: auto !important; page-break-inside: avoid !important;}
@@ -2256,6 +2273,7 @@
                                 .bg-red-100 { background-color: #FEE2E2 !important; }
                                 .bg-gray-100 { background-color: #F3F4F6 !important; }
                                 .bg-yellow-100 { background-color: #FEF3C7 !important; }
+                                 .bg-orange-100 { background-color: #FFEDD5 !important; }
                                 .bg-red-50 { background-color: #FEF2F2 !important; }
                                 .bg-green-50 { background-color: #F0FDF4 !important; }
                                 .bg-gray-50 { background-color: #F9FAFB !important; }
@@ -2284,6 +2302,7 @@
                                 .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
                                 .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
                                 .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+                                 .grid-cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
                                 .text-center { text-align: center !important; }
                                 .text-right { text-align: right !important; }
                                 .rounded-lg { border-radius: 0.5rem !important; }
@@ -2565,12 +2584,15 @@
             // Grade Distribution Chart
              try {
                 if(gradeChart) gradeChart.destroy();
+                const gradeCtx2D = gradeCtx.getContext('2d');
+                 if(!gradeCtx2D) throw new Error("Could not get 2D context for grade chart");
+
                 const gradeCounts = { 'ممتاز': 0, 'جيد جداً': 0, 'جيد': 0, 'مقبول': 0, 'ضعيف': 0 };
                  filteredResults.forEach(r => { 
-                     const grade = r.grade || 'ضعيف'; // Default to 'ضعيف' if grade is missing
+                     const grade = r.grade || 'ضعيف'; 
                      if(gradeCounts[grade] !== undefined) gradeCounts[grade]++; 
                  });
-                gradeChart = new Chart(gradeCtx.getContext('2d'), {
+                gradeChart = new Chart(gradeCtx2D, {
                     type: 'pie',
                     data: {
                         labels: Object.keys(gradeCounts),
@@ -2586,16 +2608,19 @@
             // Class Performance Chart
              try {
                 if(classChart) classChart.destroy();
+                 const classCtx2D = classCtx.getContext('2d');
+                 if(!classCtx2D) throw new Error("Could not get 2D context for class chart");
+
                 const classPerformances = {};
                 filteredResults.forEach(r => {
                      const className = r.studentClass || 'غير محدد';
                     if(!classPerformances[className]) classPerformances[className] = { total: 0, count: 0 };
-                    classPerformances[className].total += (parseInt(r.percentage) || 0); // Default to 0 if percentage is invalid
+                    classPerformances[className].total += (parseInt(r.percentage) || 0); 
                     classPerformances[className].count++;
                 });
                 const classLabels = Object.keys(classPerformances).sort();
                 const classAverages = classLabels.map(c => classPerformances[c].count > 0 ? Math.round(classPerformances[c].total / classPerformances[c].count) : 0);
-                classChart = new Chart(classCtx.getContext('2d'), {
+                classChart = new Chart(classCtx2D, {
                     type: 'bar',
                     data: {
                         labels: classLabels,
@@ -2642,7 +2667,7 @@
             } else if (chartType === 'bar'){
                  offscreenCanvas.width = 600; offscreenCanvas.height = 300; 
                  const classPerformances = {};
-                 const relevantHistory = classFilterValue ? resultsHistory.filter(r => r.studentClass === classFilterValue) : resultsHistory; // Filter history for bar chart
+                 const relevantHistory = classFilterValue ? resultsHistory.filter(r => r.studentClass === classFilterValue) : resultsHistory; 
 
                  relevantHistory.forEach(r => {
                      const className = r.studentClass || 'غير محدد';
@@ -2685,6 +2710,7 @@
                  };
                  try {
                      chartInstance = new Chart(ctx, chartConfig);
+                     if (!chartInstance) throw new Error("Chart instance creation failed.");
                  } catch (chartError) {
                      console.error("Error creating chart instance:", chartError);
                      resolve(null);
