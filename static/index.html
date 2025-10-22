@@ -66,6 +66,11 @@
             background-color: #4f46e5;
             color: white;
         }
+        /* Styles for report question analysis colors */
+        .q-errors-high { background-color: #fee2e2; color: #b91c1c; } /* Light red */
+        .q-errors-medium { background-color: #ffedd5; color: #c2410c; } /* Light orange */
+        .q-errors-low { background-color: #dcfce7; color: #166534; } /* Light green */
+        .q-errors-none { background-color: #f0fdf4; color: #16a34a; } /* Lighter green */
     </style>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -79,8 +84,8 @@
             <h1 class="text-2xl font-bold text-center mb-8">المصحح الذكي</h1>
             <nav class="flex flex-col gap-2">
                 <a href="#dashboard" class="nav-link active p-3 rounded-lg hover:bg-gray-700">🏠 لوحة التحكم</a>
-                <a href="#students" class="nav-link p-3 rounded-lg hover:bg-gray-700">👥 الطلاب</a>
                 <a href="#answer-key" class="nav-link p-3 rounded-lg hover:bg-gray-700">🔑 نماذج الإجابة</a>
+                <a href="#students" class="nav-link p-3 rounded-lg hover:bg-gray-700">👥 الطلاب</a>
                 <a href="#correction" class="nav-link p-3 rounded-lg hover:bg-gray-700">📷 التصحيح</a>
                 <a href="#history" class="nav-link p-3 rounded-lg hover:bg-gray-700">📚 السجلات</a>
                 <a href="#reports" class="nav-link p-3 rounded-lg hover:bg-gray-700">🖨️ التقارير</a>
@@ -150,14 +155,76 @@
                     </button>
                     <div id="instructions-content" class="collapsible-content mt-4 pt-4 border-t">
                         <ol class="list-decimal list-inside space-y-4 text-gray-700">
+                             <li>اذهب إلى قسم <a href="#answer-key" class="quick-start-link text-blue-600 font-bold">"نماذج الإجابة"</a> وجهّز نموذج الإجابة الصحيحة (أدخل المادة واسم الاختبار والتاريخ).</li>
                             <li>اذهب إلى قسم <a href="#students" class="quick-start-link text-blue-600 font-bold">"الطلاب"</a> واستورد قائمة طلابك.</li>
-                            <li>اذهب إلى قسم <a href="#answer-key" class="quick-start-link text-blue-600 font-bold">"نماذج الإجابة"</a> وجهّز نموذج الإجابة الصحيحة.</li>
-                            <li>انتقل إلى قسم <a href="#correction" class="quick-start-link text-blue-600 font-bold">"التصحيح"</a> وابدأ العمل!</li>
+                            <li>انتقل إلى قسم <a href="#correction" class="quick-start-link text-blue-600 font-bold">"التصحيح"</a> واختر طالباً أو ابدأ التصحيح المتعدد!</li>
                         </ol>
                     </div>
                 </div>
             </section>
+            
+            <!-- Section: Answer Key -->
+            <section id="answer-key" class="app-section">
+                <!-- إعداد الإجابات الصحيحة -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">🔑 إعداد نماذج الإجابة</h2>
+                    
+                    <div class="mb-4">
+                        <label for="answerKeyModel" class="block text-sm font-medium text-gray-700 mb-2">اختر أو أنشئ نموذج إجابة:</label>
+                        <div class="flex gap-2">
+                            <select id="answerKeyModel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></select>
+                            <button id="newModelBtn" title="نموذج جديد" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded-lg">➕</button>
+                            <button id="renameModelBtn" title="إعادة تسمية" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 rounded-lg">✏️</button>
+                            <button id="deleteModelBtn" title="حذف النموذج" class="bg-red-500 hover:bg-red-600 text-white px-3 rounded-lg">🗑️</button>
+                        </div>
+                    </div>
 
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                            <label for="questionCount" class="block text-sm font-medium text-gray-700 mb-2">عدد الأسئلة:</label>
+                            <input type="number" id="questionCount" min="1" max="100" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="optionsCount" class="block text-sm font-medium text-gray-700 mb-2">عدد الخيارات:</label>
+                            <select id="optionsCount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="4">4 (A, B, C, D)</option>
+                                <option value="5">5 (A, B, C, D, E)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="subjectName" class="block text-sm font-medium text-gray-700 mb-2">المادة:</label>
+                            <input type="text" id="subjectName" placeholder="مثال: رياضيات" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div id="examInfoSection" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                         <div>
+                            <label for="examName" class="block text-sm font-medium text-gray-700 mb-2">اسم الاختبار:</label>
+                            <input type="text" id="examName" placeholder="مثال: الاختبار الفصلي الأول" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label for="examDate" class="block text-sm font-medium text-gray-700 mb-2">تاريخ الاختبار:</label>
+                            <input type="date" id="examDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                     
+                    <div class="mt-4 pt-4 border-t">
+                         <h3 class="text-lg font-bold text-gray-800 mb-3">إجراءات النموذج</h3>
+                         <div class="flex flex-wrap gap-2">
+                            <button id="manualEntryBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">✏️ إعداد الإجابات يدوياً</button>
+                            <button id="scanKeyBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📷 تصوير نموذج محلول</button>
+                            <button id="printSheetBtn" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🖨️ طباعة نموذج فارغ</button>
+                        </div>
+                    </div>
+
+                    <div id="answerSheet" class="hidden mt-6 pt-4 border-t">
+                        <h3 class="text-xl font-bold text-gray-800 mb-4">📝 أدخل الإجابات الصحيحة يدوياً:</h3>
+                        <div id="answersGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4"></div>
+                        <button id="saveAnswersBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">حفظ الإجابات</button>
+                    </div>
+                </div>
+            </section>
+            
             <!-- Section: Students -->
             <section id="students" class="app-section">
                 <!-- إدارة الطلاب -->
@@ -236,77 +303,29 @@
                     </div>
                 </div>
             </section>
-            
-            <!-- Section: Answer Key -->
-            <section id="answer-key" class="app-section">
-                <!-- إعداد الإجابات الصحيحة -->
-                <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4">🔑 إعداد نماذج الإجابة</h2>
-                    
-                    <div class="mb-4">
-                        <label for="answerKeyModel" class="block text-sm font-medium text-gray-700 mb-2">اختر أو أنشئ نموذج إجابة:</label>
-                        <div class="flex gap-2">
-                            <select id="answerKeyModel" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></select>
-                            <button id="newModelBtn" title="نموذج جديد" class="bg-green-500 hover:bg-green-600 text-white px-3 rounded-lg">➕</button>
-                            <button id="renameModelBtn" title="إعادة تسمية" class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 rounded-lg">✏️</button>
-                            <button id="deleteModelBtn" title="حذف النموذج" class="bg-red-500 hover:bg-red-600 text-white px-3 rounded-lg">🗑️</button>
-                        </div>
-                    </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                            <label for="questionCount" class="block text-sm font-medium text-gray-700 mb-2">عدد الأسئلة:</label>
-                            <input type="number" id="questionCount" min="1" max="100" value="10" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label for="optionsCount" class="block text-sm font-medium text-gray-700 mb-2">عدد الخيارات:</label>
-                            <select id="optionsCount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                                <option value="4">4 (A, B, C, D)</option>
-                                <option value="5">5 (A, B, C, D, E)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="subjectName" class="block text-sm font-medium text-gray-700 mb-2">المادة:</label>
-                            <input type="text" id="subjectName" placeholder="مثال: رياضيات" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                    </div>
-
-                    <div id="examInfoSection" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                         <div>
-                            <label for="examName" class="block text-sm font-medium text-gray-700 mb-2">اسم الاختبار:</label>
-                            <input type="text" id="examName" placeholder="مثال: الاختبار الفصلي الأول" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                        <div>
-                            <label for="examDate" class="block text-sm font-medium text-gray-700 mb-2">تاريخ الاختبار:</label>
-                            <input type="date" id="examDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        </div>
-                    </div>
-                     
-                    <div class="mt-4 pt-4 border-t">
-                         <h3 class="text-lg font-bold text-gray-800 mb-3">إجراءات النموذج</h3>
-                         <div class="flex flex-wrap gap-2">
-                            <button id="manualEntryBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm">✏️ إعداد الإجابات يدوياً</button>
-                            <button id="scanKeyBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium text-sm">📷 تصوير نموذج محلول</button>
-                            <button id="printSheetBtn" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium text-sm">🖨️ طباعة نموذج فارغ</button>
-                        </div>
-                    </div>
-
-                    <div id="answerSheet" class="hidden mt-6 pt-4 border-t">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">📝 أدخل الإجابات الصحيحة يدوياً:</h3>
-                        <div id="answersGrid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4"></div>
-                        <button id="saveAnswersBtn" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">حفظ الإجابات</button>
-                    </div>
-                </div>
-            </section>
-            
             <!-- Section: Correction -->
             <section id="correction" class="app-section">
                 <!-- قسم الكاميرا وتحميل الصور -->
                 <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
                     <h2 class="text-2xl font-bold text-gray-800 mb-4">📷 تصوير أو تحميل ورقة الإجابة</h2>
 
+                    <div id="correctionSelectedStudentDisplay" class="mb-4 bg-green-50 rounded-lg p-4 hidden">
+                         <h3 class="text-lg font-semibold text-green-800 mb-2">👤 الطالب المحدد للتصحيح</h3>
+                         <div class="flex items-center justify-between">
+                            <div>
+                                <div class="font-semibold" id="correctionStudentNameDisplay">-</div>
+                                <div class="text-sm text-gray-600">
+                                    الفصل: <span id="correctionStudentClassDisplay">-</span>
+                                </div>
+                            </div>
+                             <button id="changeCorrectionStudentBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg font-medium text-sm">تغيير</button>
+                        </div>
+                    </div>
+
+
                     <div class="mb-4">
-                        <label for="correctionStudentSelect" class="block text-sm font-medium text-gray-700 mb-2">👤 اختر طالباً للتصحيح الفردي:</label>
+                        <label for="correctionStudentSelect" class="block text-sm font-medium text-gray-700 mb-2">👤 اختر طالباً للتصحيح الفردي (أو اختر من قسم الطلاب):</label>
                         <select id="correctionStudentSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                             <option value="">-- اختر من القائمة --</option>
                         </select>
@@ -580,13 +599,20 @@
         function getFromStorage(key, defaultValue) {
             try {
                 const storedValue = localStorage.getItem(key);
+                // Basic check for valid JSON start
                 if (storedValue && (storedValue.startsWith('{') || storedValue.startsWith('['))) {
                     return JSON.parse(storedValue);
                 }
-                return defaultValue;
+                 // Handle potential corrupted primitive values or empty strings
+                 if (storedValue === null || storedValue === undefined || storedValue === "") {
+                     return defaultValue;
+                 }
+                 // Attempt to parse even if not starting with { or [ - might be a primitive
+                 try { return JSON.parse(storedValue); } catch { return defaultValue; }
+
             } catch (e) {
                 console.error(`Error parsing ${key} from localStorage:`, e);
-                localStorage.removeItem(key); 
+                localStorage.removeItem(key); // Remove corrupted data
                 return defaultValue;
             }
         }
@@ -646,7 +672,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
              try {
-                // Event Listeners Setup
+                // Event Listeners Setup - Moved here for robust initialization
                 document.querySelectorAll('.nav-link').forEach(link => {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -668,10 +694,12 @@
                  // Event delegation for dynamically added buttons
                 document.getElementById('studentsList')?.addEventListener('click', (e) => {
                     if (e.target.classList.contains('select-student-btn')) {
-                        selectStudent(e.target.dataset.id);
+                        const studentId = e.target.dataset.id;
+                         if(studentId) selectStudent(studentId);
                     }
                      if (e.target.classList.contains('absent-btn')) {
-                        markAsAbsent(e.target.dataset.id);
+                         const studentId = e.target.dataset.id;
+                         if(studentId) markAsAbsent(studentId);
                     }
                 });
 
@@ -706,7 +734,7 @@
                  // Link subject/exam/date fields in Answer Key section
                  document.getElementById('subjectName')?.addEventListener('input', updateModelData);
                  document.getElementById('examName')?.addEventListener('input', updateModelData);
-                document.getElementById('examDate')?.addEventListener('change', updateModelData);
+                 document.getElementById('examDate')?.addEventListener('change', updateModelData);
                  document.getElementById('questionCount')?.addEventListener('change', showManualEntry); 
                  document.getElementById('optionsCount')?.addEventListener('change', showManualEntry); 
 
@@ -743,6 +771,8 @@
                 document.getElementById('searchStudentName')?.addEventListener('keyup', filterStudentsList);
                 document.getElementById('filterClass')?.addEventListener('change', filterStudentsList);
                 document.getElementById('filterStatus')?.addEventListener('change', filterStudentsList);
+                document.getElementById('changeCorrectionStudentBtn')?.addEventListener('click', selectDifferentStudent);
+
 
                  const examDateInput = document.getElementById('examDate');
                  if(examDateInput) examDateInput.valueAsDate = new Date();
@@ -760,6 +790,8 @@
              console.log("Loading initial UI...");
             settings = getFromStorage('appSettings', {});
             studentsList = getFromStorage('studentsList', []);
+            // Ensure student objects have a status
+            studentsList = studentsList.map(s => ({ ...s, status: s.status || 'pending' })); 
             resultsHistory = getFromStorage('examResults', []);
             detailedAnswersLog = getFromStorage('detailedAnswersLog', []);
             answerKeyModels = getFromStorage('answerKeyModels', {});
@@ -786,8 +818,9 @@
              else {
                  document.getElementById('detailedHistorySection')?.classList.add('hidden');
              }
-             // Ensure initial section is shown
-             showSection('dashboard');
+             // Ensure initial section is shown correctly
+             const initialSection = window.location.hash ? window.location.hash.substring(1) : 'dashboard';
+             showSection(initialSection);
              console.log("Initial UI Load Complete.");
         }
         
@@ -898,7 +931,7 @@
                         const name = String(row[nameIndex] || '').trim();
                         const className = String(row[classIndex] || '').trim();
                         if (name && className && !existingStudents.has(`${name}-${className}`)) {
-                            return { id: Date.now() + i, name, class: className, corrected: false, result: null, status: 'pending' };
+                            return { id: Date.now() + i, name, class: className, corrected: false, result: null, status: 'pending' }; // Initialize with status
                         }
                         return null;
                     }).filter(s => s !== null);
@@ -1023,13 +1056,19 @@
         function selectStudent(studentId) {
             currentStudent = studentsList.find(s => s.id === parseInt(studentId));
             const selectElement = document.getElementById('correctionStudentSelect');
-            if (currentStudent && selectElement) {
+            const displayContainer = document.getElementById('correctionSelectedStudentDisplay');
+            const nameDisplay = document.getElementById('correctionStudentNameDisplay');
+            const classDisplay = document.getElementById('correctionStudentClassDisplay');
+
+            if (currentStudent && selectElement && displayContainer && nameDisplay && classDisplay) {
                 selectElement.value = currentStudent.id;
+                nameDisplay.textContent = currentStudent.name;
+                classDisplay.textContent = currentStudent.class;
+                displayContainer.classList.remove('hidden'); 
                 showNotification(`تم اختيار الطالب: ${currentStudent.name}. يمكنك الآن بدء التصحيح.`, 'success');
-                 // Do not automatically navigate
-                 // showSection('correction'); 
             } else if (!currentStudent) {
                  console.error("Student not found with ID:", studentId);
+                 selectDifferentStudent(); // Clear selection if student not found
             }
         }
         
@@ -1052,7 +1091,9 @@
         function selectDifferentStudent() {
             currentStudent = null;
             const selectElement = document.getElementById('correctionStudentSelect');
+            const displayContainer = document.getElementById('correctionSelectedStudentDisplay');
              if(selectElement) selectElement.value = '';
+             if(displayContainer) displayContainer.classList.add('hidden');
         }
         
         function populateCorrectionStudentSelect() {
@@ -1804,7 +1845,9 @@
             
             const firstLog = filteredLogs[0]; // Use first log to find answer key
             let reportCorrectAnswers = [];
-            let questionAnalysisHTML = '<p class="text-sm text-gray-500">لا يمكن تحليل الأسئلة بدون نموذج إجابة مطابق.</p>';
+            let questionAnalysisHTML = '<p class="text-sm text-gray-500">لا يمكن تحليل الأسئلة بدون نموذج إجابة مطابق لهذا الاختبار.</p>';
+            let hardestQuestionNum = '-';
+            let easiestQuestionNum = '-';
             
             if (firstLog) {
                 const modelName = Object.keys(answerKeyModels).find(key => {
@@ -1816,30 +1859,46 @@
                 if (reportCorrectAnswers.length > 0) {
                      const questionErrors = {};
                      for (let i = 0; i < reportCorrectAnswers.length; i++) {
-                         questionErrors[i + 1] = { errors: 0, choices: {} };
+                         questionErrors[i + 1] = { errors: 0, choices: {}, correct: reportCorrectAnswers[i] };
                      }
                      filteredLogs.forEach(log => {
                          (log.answers || []).forEach((studentAnswer, i) => {
                              if (i < reportCorrectAnswers.length && studentAnswer !== reportCorrectAnswers[i]) {
                                  questionErrors[i + 1].errors++;
-                                 if(studentAnswer && studentAnswer !== 'فراغ'){ // Check if studentAnswer is not null/undefined/empty
+                                 if(studentAnswer && studentAnswer !== 'فراغ'){ 
                                      questionErrors[i + 1].choices[studentAnswer] = (questionErrors[i + 1].choices[studentAnswer] || 0) + 1;
                                  }
                              }
                          });
                      });
+                     
                      const sortedErrors = Object.entries(questionErrors).sort(([,a],[,b]) => b.errors - a.errors);
                      
+                     hardestQuestionNum = sortedErrors.length > 0 ? sortedErrors[0][0] : '-';
+                     easiestQuestionNum = sortedErrors.length > 0 ? sortedErrors[sortedErrors.length - 1][0] : '-';
+
                      questionAnalysisHTML = `
-                        <table class="w-full text-sm mt-4">
-                            <thead><tr class="border-b-2 border-black"><th class="p-2">رقم السؤال</th><th class="p-2">عدد الأخطاء</th><th class="p-2">الإجابة الصحيحة</th></tr></thead>
+                        <table class="w-full text-sm mt-4 border-collapse border border-gray-300">
+                            <thead>
+                                <tr class="bg-gray-100 border-b border-gray-300">
+                                    <th class="p-2 border-l border-gray-300">رقم السؤال</th>
+                                    <th class="p-2 border-l border-gray-300">عدد الأخطاء</th>
+                                    <th class="p-2">الإجابة الصحيحة</th>
+                                </tr>
+                            </thead>
                             <tbody>
-                                ${sortedErrors.map(([qNum, data]) => `
-                                    <tr class="border-b">
-                                        <td class="p-2 text-center">${qNum}</td>
-                                        <td class="p-2 text-center text-red-600 font-bold">${data.errors}</td>
-                                        <td class="p-2 text-center">${reportCorrectAnswers[qNum-1] || '-'}</td>
-                                    </tr>`).join('')}
+                                ${sortedErrors.map(([qNum, data]) => {
+                                    let errorClass = 'q-errors-none';
+                                    if (data.errors > filteredLogs.length * 0.5) errorClass = 'q-errors-high';
+                                    else if (data.errors > filteredLogs.length * 0.25) errorClass = 'q-errors-medium';
+                                    else if (data.errors > 0) errorClass = 'q-errors-low';
+                                    return `
+                                    <tr class="border-b border-gray-200 ${errorClass}">
+                                        <td class="p-2 text-center font-bold border-l border-gray-300">${qNum}</td>
+                                        <td class="p-2 text-center font-bold border-l border-gray-300">${data.errors}</td>
+                                        <td class="p-2 text-center">${data.correct || '-'}</td>
+                                    </tr>`
+                                }).join('')}
                             </tbody>
                         </table>`;
                  }
@@ -1866,8 +1925,18 @@
                        
                     </div>
                     
-                    <h4 class="text-lg font-bold mt-6 mb-2">تحليل الأسئلة (من الأصعب للأسهل)</h4>
-                    <div class="max-h-60 overflow-y-auto pr-2 mb-6">
+                    <h4 class="text-lg font-bold mt-6 mb-2">تحليل الأسئلة</h4>
+                     <div class="grid grid-cols-2 gap-4 mb-4">
+                         <div class="bg-red-50 p-3 rounded-lg text-center">
+                            <h5 class="font-semibold mb-1 text-red-700">أصعب سؤال</h5>
+                            <p class="text-2xl font-bold text-red-600">${hardestQuestionNum}</p>
+                        </div>
+                        <div class="bg-green-50 p-3 rounded-lg text-center">
+                            <h5 class="font-semibold mb-1 text-green-700">أسهل سؤال</h5>
+                            <p class="text-2xl font-bold text-green-600">${easiestQuestionNum}</p>
+                        </div>
+                    </div>
+                    <div class="max-h-60 overflow-y-auto pr-2 mb-6 border rounded p-2 bg-gray-50">
                         ${questionAnalysisHTML}
                     </div>
 
@@ -1889,25 +1958,29 @@
              if(classFilter === undefined || examFilter === undefined) return;
             const title = `تقرير أداء ${examFilter || 'الاختبار'}`;
             
-            let reportContent = document.getElementById('printable-report')?.innerHTML || '';
-             // Remove the print button from the cloned content for printing
-             const tempDiv = document.createElement('div');
-             tempDiv.innerHTML = reportContent;
-             tempDiv.querySelector('#printReportBtn')?.remove();
-             reportContent = tempDiv.innerHTML;
-
-
+            // Get the generated content *excluding* the print button itself for printing
+            const reportContainerClone = document.getElementById('report-container').cloneNode(true);
+            const printButtonInClone = reportContainerClone.querySelector('#printReportBtn');
+            if(printButtonInClone) printButtonInClone.remove();
+            let reportContent = reportContainerClone.innerHTML; // Contains summary + analysis table
+             
+            // Filter logs again to get student list for printing
             const studentLogs = detailedAnswersLog.filter(log => 
                 (!classFilter || log.studentClass === classFilter) &&
                 (!examFilter || log.examName === examFilter)
             );
             const allStudentsInFilter = studentsList.filter(s => !classFilter || s.class === classFilter);
 
-            const studentListHTML = allStudentsInFilter.map(student => {
+            // Sort students alphabetically for the table
+            allStudentsInFilter.sort((a,b) => a.name.localeCompare(b.name, 'ar'));
+
+            const studentListHTML = allStudentsInFilter.map((student, index) => {
                 const log = studentLogs.find(l => l.studentName === student.name && l.studentClass === student.class);
                 return `
                 <tr class="border-b">
-                    <td class="p-2">${student.name}</td>
+                    <td class="p-2 text-center">${index + 1}</td>
+                    <td class="p-2 text-right">${student.name}</td>
+                     <td class="p-2 text-center">${student.class}</td>
                     <td class="p-2 text-center">${log ? log.score : (student.status === 'absent' ? 'غائب' : '-')}</td>
                     <td class="p-2 text-center">${log ? log.percentage : '-'}</td>
                     <td class="p-2 text-center">${log ? log.grade : '-'}</td>
@@ -1919,14 +1992,14 @@
             const studentTable = `
                 <h4 class="text-lg font-bold mt-6 mb-2">درجات الطلاب</h4>
                 <table class="w-full text-sm mt-4">
-                    <thead><tr class="border-b-2 border-black"><th class="p-2 text-right">اسم الطالب</th><th class="p-2">الدرجة</th><th class="p-2">النسبة</th><th class="p-2">التقدير</th></tr></thead>
+                    <thead><tr class="border-b-2 border-black"><th class="p-2">#</th><th class="p-2 text-right">اسم الطالب</th><th class="p-2">الفصل</th><th class="p-2">الدرجة</th><th class="p-2">النسبة</th><th class="p-2">التقدير</th></tr></thead>
                     <tbody>${studentListHTML}</tbody>
                 </table>
                  <h4 class="text-lg font-bold mt-6 mb-2">توزيع التقديرات</h4>
                 ${chartImage ? `<img src="${chartImage}" class="mx-auto" style="max-width: 300px;"/>` : '<p class="text-center text-gray-500">لا يمكن عرض الرسم البياني للتقديرات.</p>'}
             `;
             
-            printContent(reportContent + studentTable, title);
+            printContent(reportContent + studentTable, title); // Combine analysis table and student table
         }
 
         function printContent(content, title) {
@@ -1934,7 +2007,7 @@
             const classFilter = document.getElementById('reportClassFilter')?.value || '';
             const examFilter = document.getElementById('reportExamFilter')?.value || '';
             const date = new Date().toLocaleDateString('ar-SA');
-            const fileName = `${title.replace(/\s/g, '_')}-${examFilter.replace(/\s/g, '_')}-${date}`;
+            const fileName = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${examFilter.replace(/[^a-zA-Z0-9]/g, '_')}_${date}`; // Sanitize file name
 
             const headerInfo = `
                 <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
@@ -1956,7 +2029,8 @@
             const fullContent = headerInfo + content;
             const win = window.open('', '_blank');
              if(win){
-                win.document.write(`<html><head><title>${fileName}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo', sans-serif; direction: rtl; margin: 20px;} table { border-collapse: collapse; width: 100%; } td, th { border: 1px solid #ddd; padding: 8px; text-align: center; } th { background-color: #f2f2f2; } tr:nth-child(even){background-color: #f9f9f9;} @media print { body { -webkit-print-color-adjust: exact; } button { display: none; } }</style></head><body class="p-4">${fullContent}</body></html>`);
+                 // Added style block specifically for printing tables correctly
+                win.document.write(`<html><head><title>${fileName}</title><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet"><style>body{font-family:'Cairo', sans-serif; direction: rtl; margin: 20px;} table { border-collapse: collapse; width: 100%; margin-top: 15px; } td, th { border: 1px solid #ddd; padding: 8px; text-align: center; } th { background-color: #f2f2f2; font-weight: bold;} tr:nth-child(even){background-color: #f9f9f9;} @media print { body { -webkit-print-color-adjust: exact; color-adjust: exact; } button { display: none; } }</style></head><body class="p-4">${fullContent}</body></html>`);
                 win.document.close();
                 setTimeout(() => { 
                     try { win.print(); } catch(e){ console.error("Print error:", e); }
@@ -2163,13 +2237,27 @@
                     const data = JSON.parse(e.target.result);
                     // Add more validation if necessary
                     if (data.appSettings && data.studentsList && data.examResults && data.detailedAnswersLog && data.answerKeyModels) {
-                        localStorage.setItem('appSettings', JSON.stringify(data.appSettings || {}));
-                        localStorage.setItem('studentsList', JSON.stringify(data.studentsList || []));
-                        localStorage.setItem('examResults', JSON.stringify(data.examResults || []));
-                        localStorage.setItem('detailedAnswersLog', JSON.stringify(data.detailedAnswersLog || []));
-                        localStorage.setItem('answerKeyModels', JSON.stringify(data.answerKeyModels || {}));
-                        showNotification('تم استعادة البيانات بنجاح! سيتم إعادة تحميل الصفحة.', 'success');
-                        setTimeout(() => location.reload(), 1500);
+                         // Restore data
+                         settings = data.appSettings || {};
+                         studentsList = (data.studentsList || []).map(s => ({ ...s, status: s.status || 'pending' })); // Ensure status on restore
+                         resultsHistory = data.examResults || [];
+                         detailedAnswersLog = data.detailedAnswersLog || [];
+                         answerKeyModels = data.answerKeyModels || {};
+                         
+                         // Save restored data to localStorage
+                         localStorage.setItem('appSettings', JSON.stringify(settings));
+                         localStorage.setItem('studentsList', JSON.stringify(studentsList));
+                         localStorage.setItem('examResults', JSON.stringify(resultsHistory));
+                         localStorage.setItem('detailedAnswersLog', JSON.stringify(detailedAnswersLog));
+                         localStorage.setItem('answerKeyModels', JSON.stringify(answerKeyModels));
+
+                        showNotification('تم استعادة البيانات بنجاح! سيتم تحديث الواجهة.', 'success');
+                        
+                        // Instead of reload, call loadInitialUI to refresh display
+                        loadInitialUI(); 
+                        showSection('dashboard'); // Go to dashboard after restore
+
+
                     } else {
                         throw new Error("ملف النسخ الاحتياطي غير صالح أو تالف.");
                     }
