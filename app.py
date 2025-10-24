@@ -22,12 +22,12 @@ try:
     genai.configure(api_key=GEMINI_API_KEY)
     
     # تحديد الموديل
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.5-flash')
     logging.info("تم تهيئة Gemini بنجاح باستخدام 'gemini-1.5-flash'.")
 
 except Exception as e:
     logging.error(f"خطأ أثناء تهيئة Gemini: {e}")
-    logging.error("تأكد من صحة المفتاح 'GEMINI_API_KEY' وأن الموديل 'gemini-1.5-flash' متاح.")
+    logging.error("تأكد من صحة المفتاح 'GEMINI_API_KEY' وأن الموديل 'gemini-2.5-flash' متاح.")
     model = None
 
 # Route to serve the frontend (index.html)
@@ -157,4 +157,5 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     logging.info(f"بدء تشغيل الخادم على http://0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port, debug=True)
+
 
