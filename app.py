@@ -45,12 +45,15 @@ def correct_answers():
 
         options_str = "A, B, C, D" if options_per_q == 4 else "A, B, C, D, E"
         prompt = f"""
-This is an image of a multiple-choice test answer sheet.
-Number of questions: {num_questions}
-Number of options per question: {options_per_q} ({options_str})
-Very important: Respond ONLY with a JSON list of the answers, like: ["A", "B", "Blank", "C", ...]
-Use "Blank" if no option is shaded for a question. In Arabic, this is "فراغ".
-Do not write any explanation or extra text. Only the list.
+أنت مساعد ذكاء اصطناعي متخصص في قراءة نماذج الإجابات.
+هذه صورة لنموذج إجابة اختبار من متعدد.
+عدد الأسئلة: {num_questions}
+عدد الخيارات لكل سؤال: {options_per_q} ({options_str})
+
+مهم جداً: قم بالرد فقط باستخدام قائمة JSON تحتوي على الإجابات.
+مثال: ["A", "B", "Blank", "C"]
+استخدم القيمة "Blank" (بالضبط بهذه الحروف) إذا لم يتم تظليل أي خيار للسؤال.
+لا تقم بكتابة أي شروحات أو نصوص إضافية. الرد يجب أن يكون قائمة JSON فقط.
         """.strip()
 
         response = model.generate_content([prompt, img])
@@ -95,4 +98,5 @@ Do not write any explanation or extra text. Only the list.
 # Main entry point to run the Flask app
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8000)))
+
 
