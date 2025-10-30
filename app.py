@@ -13,11 +13,9 @@ logging.basicConfig(level=logging.INFO)
 
 # 1. إعدادات نموذج Gemini
 try:
-    # --- تأكد من ضبط هذا المتغير في بيئة التشغيل لديك ---
     # يجب ضبط GEMINI_API_KEY كمتغير بيئة على منصة Render
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
     if not GEMINI_API_KEY:
-        # سيتم التعامل مع هذا الخطأ أثناء التهيئة، وهو السلوك المتوقع على Render إذا لم يتم ضبط المتغير
         raise ValueError("لم يتم العثور على مفتاح GEMINI_API_KEY في متغيرات البيئة")
     
     genai.configure(api_key=GEMINI_API_KEY)
@@ -45,15 +43,18 @@ except Exception as e:
     safety_settings = []
 
 # 2. إعداد خادم Flask
-# static_folder='.' لتمكين Render من العثور على index.html في جذر المشروع
-app = Flask(__name__, static_folder='.', static_url_path='')
+# التعديل الرئيسي هنا: تحديد مجلد 'static' للملفات الثابتة
+app = Flask(__name__, static_folder='static', static_url_path='/static') 
 
 # 3. المسارات (Routes)
 
-# Route to serve the frontend (index.html)
+# Route to serve the frontend (index.html) from the 'static' folder
 @app.route('/')
 def serve_frontend():
-    return send_from_directory('.', 'index.html')
+    # توجيه Flask لخدمة index.html من مجلد static عند طلب المسار الجذر
+    return send_from_directory(app.static_folder, 'index.html')
+
+# (إزالة مسار /favicon.ico) - المتصفح سيحاول طلبه من الجذر، لكن المسار أعلاه سيخدم index.html
 
 # API endpoint for processing the answer sheet
 @app.route('/api/correct', methods=['POST'])
@@ -63,7 +64,6 @@ def correct_answers():
         return jsonify({"success": False, "error": "Gemini model is not initialized. Check API key."}), 500
         
     try:
-        # استلام البيانات بتنسيق JSON من الواجهة الأمامية
         data = request.get_json()
         image_base64 = data.get('image_base64')
         num_questions = int(data.get('num_questions', 10))
@@ -73,7 +73,6 @@ def correct_answers():
         if not image_base64:
             return jsonify({"success": False, "error": "No image data uploaded"}), 400
 
-        # فك تشفير الصورة
         image_bytes = base64.b64decode(image_base64)
         img = Image.open(BytesIO(image_bytes))
 
@@ -81,12 +80,12 @@ def correct_answers():
         options_letters = [chr(65 + i) for i in range(options_per_q)]
         options_str = ", ".join(options_letters)
         
-        # --- بناء الـ Prompt (الأمر) المُحسَّن للتركيز ---
+        # --- بناء الـ Prompt (الأمر) ---
         if is_key_scan:
             prompt_role = "أنت مساعد متخصص في قراءة نماذج الإجابات الصحيحة."
             prompt_task = f"""
                 مهمتك هي قراءة الإجابات المظللة في ورقة الإجابة هذه وتحديد الإجابة الصحيحة لكل سؤال.
-                التركيز يجب أن يكون على منطقة الإجابات فقط لتجاهل أي تشويش.
+                التركيز يجب أن يكون على منطقة الإجابات فقط لتجنب أي تشويش.
                 يرجى الرد بقائمة JSON تحتوي على إجابة واحدة لكل سؤال من {num_questions} سؤال.
                 استخدم القيمة "Blank" إذا لم يتم تظليل أي شيء.
             """
@@ -155,8 +154,4 @@ def correct_answers():
 # 4. نقطة بدء تشغيل الخادم
 if __name__ == '__main__':
     # إعدادات التشغيل المحلي
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    app.static_folder = current_dir
-    app.static_url_path = '/'
-    port = int(os.environ.get('PORT', 8000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=os.environ.get('PORT', 8000), debug=False)
