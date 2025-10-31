@@ -1171,12 +1171,11 @@
                     studentAnswers = data.answers;
                     showAnswerVerification();
                 }
-            } catch (err) {
+} catch (err) {
                 console.error("Error processing answers:", err);
                 showNotification(`فشل تحليل الصورة: ${err.message}`, 'error');
                 resetForNewSheet();
-            }
-        
+            }        
 
 // === Verification and Results ===
 function showAnswerVerification() {
