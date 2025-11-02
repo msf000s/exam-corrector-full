@@ -2692,16 +2692,16 @@
                         }
                     }
                 };
-                try {
-                    chartInstance = new Chart(ctx, chartConfig);
-                    if (!chartInstance) throw new Error("Chart instance creation failed.");
-                } catch (chartError) {
-                    console.error("Error creating chart instance:", chartError);
-                    resolve(null);
-                }
-            });
-
+   try {
+            chartInstance = new Chart(ctx, chartConfig);
+            if (!chartInstance) throw new Error("Chart instance creation failed.");
+        } catch (chartError) {
+            console.error("Error creating chart instance:", chartError);
+            resolve(null);
         }
+    });
+
+} // <-- يجب وجود هذا القوس لإغلاق دالة getReportChartsAsImages
     
         document.addEventListener('DOMContentLoaded', () => {
             // Re-attach listeners outside of the initial load for dynamic content if needed
@@ -2711,3 +2711,4 @@
     </script>
 </body>
 </html>
+
