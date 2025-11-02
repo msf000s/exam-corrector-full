@@ -7,13 +7,16 @@ import json
 import logging
 import base64
 from io import BytesIO
+import sqlite3
+import atexit # لإغلاق الاتصال بقاعدة البيانات عند خروج التطبيق
 
-# --- الإعدادات الأساسية ---
+# --- الإعدادات الأساسية (بدون تغيير) ---
 logging.basicConfig(level=logging.INFO)
 
 # 1. إعدادات نموذج Gemini
+# ... (كود إعداد Gemini الحالي) ...
+
 try:
-    # يجب ضبط GEMINI_API_KEY كمتغير بيئة على منصة Render
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
     if not GEMINI_API_KEY:
         raise ValueError("لم يتم العثور على مفتاح GEMINI_API_KEY في متغيرات البيئة")
@@ -22,13 +25,11 @@ try:
     model = genai.GenerativeModel('gemini-2.5-flash')
     logging.info("تم تهيئة Gemini بنجاح.")
 
-    # إعدادات الإنشاء لضمان الحصول على JSON
     generation_config = {
         "temperature": 0,
         "response_mime_type": "application/json", 
     }
 
-    # إعدادات السلامة (للسماح بمعالجة صور الأوراق)
     safety_settings = [
         {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_NONE"},
         {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_NONE"},
@@ -43,22 +44,84 @@ except Exception as e:
     safety_settings = []
 
 # 2. إعداد خادم Flask
-# التعديل الرئيسي هنا: تحديد مجلد 'static' للملفات الثابتة
 app = Flask(__name__, static_folder='static', static_url_path='/static') 
 
-# 3. المسارات (Routes)
+# ----------------------------------------------------
+# 💾 دوال إدارة قاعدة البيانات SQLite الجديدة 
+# ----------------------------------------------------
 
-# Route to serve the frontend (index.html) from the 'static' folder
+DATABASE = 'omr_data.db'
+
+def get_db_connection():
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    """إنشاء الجداول عند بدء التشغيل."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # 1. جدول الطلاب
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS students (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            class TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            latest_result_json TEXT 
+        );
+    """)
+    
+    # 2. جدول نماذج الإجابة
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS answer_keys (
+            name TEXT PRIMARY KEY,
+            subject TEXT,
+            exam_name TEXT,
+            exam_date TEXT,
+            answers_json TEXT NOT NULL
+        );
+    """)
+    
+    # 3. جدول سجلات النتائج المفصلة (Detailed Log)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS results_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id INTEGER,
+            student_name TEXT,
+            student_class TEXT,
+            exam_name TEXT,
+            exam_date TEXT,
+            score_summary TEXT,
+            percentage TEXT,
+            grade TEXT,
+            answers_log_json TEXT NOT NULL
+        );
+    """)
+    
+    conn.commit()
+    conn.close()
+    logging.info("تم تهيئة قاعدة بيانات SQLite بنجاح.")
+
+# تنفيذ تهيئة قاعدة البيانات عند بدء تشغيل التطبيق
+init_db()
+
+# ----------------------------------------------------
+# 3. المسارات (Routes)
+# ----------------------------------------------------
+
 @app.route('/')
 def serve_frontend():
-    # توجيه Flask لخدمة index.html من مجلد static عند طلب المسار الجذر
     return send_from_directory(app.static_folder, 'index.html')
-
-# (إزالة مسار /favicon.ico) - المتصفح سيحاول طلبه من الجذر، لكن المسار أعلاه سيخدم index.html
 
 # API endpoint for processing the answer sheet
 @app.route('/api/correct', methods=['POST'])
 def correct_answers():
+    # ... (كود التصحيح الحالي) ...
+    # هنا لا يلزم أي تغيير، حيث أن هذه الدالة ترسل وتستقبل البيانات من Gemini فقط.
+    # التغيير سيتم في الدوال التي تستبدل localStorage (مثل حفظ/تحميل الطلاب والنماذج)
+
     logging.info("تم استلام طلب تصحيح جديد... /api/correct")
     if model is None:
         return jsonify({"success": False, "error": "Gemini model is not initialized. Check API key."}), 500
